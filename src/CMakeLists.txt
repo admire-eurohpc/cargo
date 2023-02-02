@@ -26,3 +26,39 @@ add_subdirectory(utils)
 add_subdirectory(config)
 add_subdirectory(logger)
 add_subdirectory(net)
+
+## The main executable for the Cargo data stager
+add_executable(cargo_server)
+
+target_sources(
+  cargo_server
+  PRIVATE cargo.cpp
+          master.cpp
+          master.hpp
+          worker.cpp
+          worker.hpp
+          env.hpp
+)
+
+target_include_directories(
+  cargo_server
+  PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_BINARY_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+target_link_libraries(
+  cargo_server
+  PRIVATE config
+          logger
+          rpc_server
+          cargo
+          fmt::fmt
+          MPI::MPI_CXX
+          Boost::program_options
+          Boost::serialization
+          Boost::mpi
+)
+
+set_target_properties(cargo_server PROPERTIES OUTPUT_NAME "cargo")
+
+install(TARGETS cargo_server DESTINATION ${CMAKE_INSTALL_BINDIR})

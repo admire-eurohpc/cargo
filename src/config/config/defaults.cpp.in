@@ -1,23 +1,23 @@
 /******************************************************************************
- * Copyright 2021, Barcelona Supercomputing Center (BSC), Spain
+ * Copyright 2022-2023, Barcelona Supercomputing Center (BSC), Spain
  *
  * This software was partially supported by the EuroHPC-funded project ADMIRE
  *   (Project ID: 956748, https://www.admire-eurohpc.eu).
  *
- * This file is part of scord.
+ * This file is part of Cargo.
  *
- * scord is free software: you can redistribute it and/or modify
+ * Cargo is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * scord is distributed in the hope that it will be useful,
+ * Cargo is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with scord.  If not, see <https://www.gnu.org/licenses/>.
+ * along with Cargo.  If not, see <https://www.gnu.org/licenses/>.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 #include <cstdint>
 
-namespace scord::config::defaults {
+namespace config::defaults {
 
 const char* progname = "@CMAKE_PROJECT_NAME@";
 const bool daemonize = true;
@@ -49,4 +49,4 @@ const uint32_t backlog_size = 128;
 const char* config_file =
         "@CMAKE_INSTALL_FULL_SYSCONFDIR@/@CMAKE_PROJECT_NAME@.conf";
 
-} // namespace scord::config::defaults
+} // namespace config::defaults

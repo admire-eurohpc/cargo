@@ -1,14 +1,14 @@
 genopts:
   schema:
     copyright_file: "@CMAKE_SOURCE_DIR@/COPYRIGHT_NOTICE"
-    header_guard: "SCORD_CONFIG_SCHEMA_HPP"
-    namespace: "scord::config"
+    header_guard: "CONFIG_SCHEMA_HPP"
+    namespace: "config"
     output_path:
       header: "@CMAKE_CURRENT_BINARY_DIR@/config_options.hpp"
 
   keywords:
     copyright_file: "@CMAKE_SOURCE_DIR@/COPYRIGHT_NOTICE"
-    header_guard: "SCORD_CONFIG_KEYWORDS_HPP"
-    namespace: "scord::config::keywords"
+    header_guard: "CONFIG_KEYWORDS_HPP"
+    namespace: "config::keywords"
     output_path:
       header: "@CMAKE_CURRENT_BINARY_DIR@/keywords.hpp"

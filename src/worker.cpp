@@ -27,6 +27,7 @@
 #include <boost/mpi.hpp>
 #include <boost/mpi/error_string.hpp>
 #include "message.hpp"
+#include "mpioxx.hpp"
 
 namespace mpi = boost::mpi;
 using namespace std::chrono_literals;

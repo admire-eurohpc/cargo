@@ -39,6 +39,7 @@ target_sources(
           worker.cpp
           worker.hpp
           env.hpp
+          mpioxx.hpp
           message.hpp
 )
 

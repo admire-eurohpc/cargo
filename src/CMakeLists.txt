@@ -26,6 +26,7 @@ add_subdirectory(utils)
 add_subdirectory(config)
 add_subdirectory(logger)
 add_subdirectory(net)
+add_subdirectory(posix_file)
 
 ## The main executable for the Cargo data stager
 add_executable(cargo_server)
@@ -57,6 +58,7 @@ target_link_libraries(
           Boost::program_options
           Boost::serialization
           Boost::mpi
+          posix_file
 )
 
 set_target_properties(cargo_server PROPERTIES OUTPUT_NAME "cargo")

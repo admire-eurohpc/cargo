@@ -187,6 +187,10 @@ find_package(Argobots 1.1 REQUIRED)
 message(STATUS "[${PROJECT_NAME}] Checking for Margo")
 find_package(Margo 0.9.6 REQUIRED)
 
+### Thallium
+message(STATUS "[${PROJECT_NAME}] Checking for Thallium")
+find_package(Thallium REQUIRED)
+
 ### {fmt}: required for sensible output formatting
 message(STATUS "[${PROJECT_NAME}] Downloading and building {fmt}")
 FetchContent_Declare(

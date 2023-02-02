@@ -39,6 +39,7 @@ target_sources(
           worker.cpp
           worker.hpp
           env.hpp
+          message.hpp
 )
 
 target_include_directories(

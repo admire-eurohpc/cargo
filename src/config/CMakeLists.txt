@@ -4,23 +4,31 @@
 # This software was partially supported by the EuroHPC-funded project ADMIRE   #
 #   (Project ID: 956748, https://www.admire-eurohpc.eu).                       #
 #                                                                              #
-# This file is part of cargo.                                                  #
+# This file is part of Cargo.                                                  #
 #                                                                              #
-# cargo is free software: you can redistribute it and/or modify                #
+# Cargo is free software: you can redistribute it and/or modify                #
 # it under the terms of the GNU General Public License as published by         #
 # the Free Software Foundation, either version 3 of the License, or            #
 # (at your option) any later version.                                          #
 #                                                                              #
-# cargo is distributed in the hope that it will be useful,                     #
+# Cargo is distributed in the hope that it will be useful,                     #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of               #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
 # GNU General Public License for more details.                                 #
 #                                                                              #
 # You should have received a copy of the GNU General Public License            #
-# along with cargo.  If not, see <https://www.gnu.org/licenses/>.              #
+# along with Cargo.  If not, see <https://www.gnu.org/licenses/>.              #
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_subdirectory(utils)
 add_subdirectory(config)
+
+# Since some of the sources will be auto-generated, we need to search for
+# includes in ${CMAKE_CURRENT_BINARY_DIR}
+target_include_directories(
+  config PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+set_property(TARGET config PROPERTY POSITION_INDEPENDENT_CODE ON)

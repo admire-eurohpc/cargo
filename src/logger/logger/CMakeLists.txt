@@ -4,24 +4,26 @@
 # This software was partially supported by the EuroHPC-funded project ADMIRE   #
 #   (Project ID: 956748, https://www.admire-eurohpc.eu).                       #
 #                                                                              #
-# This file is part of cargo.                                                  #
+# This file is part of scord.                                                  #
 #                                                                              #
-# cargo is free software: you can redistribute it and/or modify                #
+# scord is free software: you can redistribute it and/or modify                #
 # it under the terms of the GNU General Public License as published by         #
 # the Free Software Foundation, either version 3 of the License, or            #
 # (at your option) any later version.                                          #
 #                                                                              #
-# cargo is distributed in the hope that it will be useful,                     #
+# scord is distributed in the hope that it will be useful,                     #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of               #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
 # GNU General Public License for more details.                                 #
 #                                                                              #
 # You should have received a copy of the GNU General Public License            #
-# along with cargo.  If not, see <https://www.gnu.org/licenses/>.              #
+# along with scord.  If not, see <https://www.gnu.org/licenses/>.              #
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_subdirectory(utils)
-add_subdirectory(config)
-add_subdirectory(logger)
+add_library(logger INTERFACE)
+
+target_sources(logger INTERFACE logger.hpp)
+
+target_link_libraries(logger INTERFACE spdlog::spdlog fmt::fmt)

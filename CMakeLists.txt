@@ -302,8 +302,37 @@ else ()
 endif ()
 
 add_subdirectory(etc)
+add_subdirectory(lib)
 add_subdirectory(src)
 
 if(CARGO_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
+
+
+# ##############################################################################
+# Generate and install CMake config files so that the project can be consumed
+# using find_package()
+# ##############################################################################
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+  "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in"
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+  INSTALL_DESTINATION
+  "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}"
+)
+
+write_basic_package_version_file(
+  "${PROJECT_NAME}-config-version.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+  DESTINATION
+  ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}
+  )

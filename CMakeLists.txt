@@ -263,6 +263,9 @@ if (CARGO_BUILD_TESTS)
 
   enable_testing()
 
+  ### boost::iostreams are required for some tests
+  find_package(Boost 1.53 REQUIRED COMPONENTS iostreams)
+
   ### catch2: required for unit testing
   message(STATUS "[${PROJECT_NAME}] Downloading and building Catch2")
   FetchContent_Declare(

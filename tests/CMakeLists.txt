@@ -21,3 +21,17 @@
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
+
+include(Catch)
+
+add_executable(tests)
+
+target_sources(tests PRIVATE tests.cpp common.hpp common.cpp)
+
+target_link_libraries(
+  tests PUBLIC Catch2::Catch2 Boost::iostreams fmt::fmt cargo
+)
+
+catch_discover_tests(
+  tests EXTRA_ARGS "-S ${CARGO_TRANSPORT_PROTOCOL}://${CARGO_BIND_ADDRESS}:${CARGO_BIND_PORT}"
+)

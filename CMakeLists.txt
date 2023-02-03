@@ -26,8 +26,7 @@
 # Define the CMake project and configure CMake
 # ##############################################################################
 
-# FetchContent_MakeAvailable() was introduced in 3.14
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.19)
 
 project(
   cargo

@@ -189,19 +189,6 @@ equal(const std::filesystem::path& filepath1,
     return rv;
 }
 
-std::tuple<std::string, std::string>
-split(const std::string& id) {
-
-    constexpr auto delim = "://"sv;
-    const auto n = id.find(delim);
-
-    if(n == std::string::npos) {
-        return {std::string{}, id};
-    }
-
-    return {id.substr(0, n), id.substr(n + delim.length(), id.length())};
-}
-
 
 uint32_t catch2_seed;
 std::string server_address;
@@ -218,22 +205,22 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
 
         cargo::server server{server_address};
 
-        const auto sources =
-                prepare_datasets("lustre://source-dataset-{}", NDATASETS);
-        const auto targets = prepare_datasets("target-dataset-{}", NDATASETS);
+        const auto sources = prepare_datasets(cargo::dataset::type::parallel,
+                                              "source-dataset-{}", NDATASETS);
+        const auto targets = prepare_datasets(cargo::dataset::type::posix,
+                                              "target-dataset-{}", NDATASETS);
 
         static std::vector<scoped_file> input_files;
         input_files.reserve(sources.size());
 
         for(const auto& d : sources) {
-            const auto& [prefix, filepath] = ::split(d.id());
             input_files.emplace_back(
-                    create_temporary_file(filepath, 1000, rng));
+                    create_temporary_file(d.path(), 1000, rng));
         }
 
         // ensure there are no dangling output files from another test run
         std::for_each(targets.begin(), targets.end(), [](auto&& dataset) {
-            std::filesystem::remove(dataset.id());
+            std::filesystem::remove(dataset.path());
         });
 
         WHEN("Transferring datasets to a POSIX storage system") {
@@ -248,10 +235,11 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
             THEN("Output datasets are identical to input datasets") {
 
                 std::vector<scoped_file> output_files;
-                std::transform(
-                        targets.cbegin(), targets.cend(),
-                        std::back_inserter(output_files),
-                        [](auto&& target) { return scoped_file{target.id()}; });
+                std::transform(targets.cbegin(), targets.cend(),
+                               std::back_inserter(output_files),
+                               [](auto&& target) {
+                                   return scoped_file{target.path()};
+                               });
 
                 for(std::size_t i = 0; i < input_files.size(); ++i) {
                     REQUIRE(std::filesystem::exists(output_files[i].path()));
@@ -277,23 +265,22 @@ SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
 
         cargo::server server{server_address};
 
-        const auto sources =
-                prepare_datasets("source-dataset-{}", NDATASETS);
-        const auto targets =
-                prepare_datasets("lustre://target-dataset-{}", NDATASETS);
+        const auto sources = prepare_datasets(cargo::dataset::type::posix,
+                                              "source-dataset-{}", NDATASETS);
+        const auto targets = prepare_datasets(cargo::dataset::type::parallel,
+                                              "target-dataset-{}", NDATASETS);
 
         static std::vector<scoped_file> input_files;
         input_files.reserve(sources.size());
 
         for(const auto& d : sources) {
-            const auto& [prefix, filepath] = ::split(d.id());
             input_files.emplace_back(
-                    create_temporary_file(d.id(), file_size, rng));
+                    create_temporary_file(d.path(), file_size, rng));
         }
 
         // ensure there are no danling output files from another test run
         std::for_each(targets.begin(), targets.end(), [](auto&& dataset) {
-            std::filesystem::remove(dataset.id());
+            std::filesystem::remove(dataset.path());
         });
 
         WHEN("Transferring datasets to a PFS") {
@@ -311,14 +298,11 @@ SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
                 std::transform(targets.cbegin(), targets.cend(),
                                std::back_inserter(output_files),
                                [](auto&& target) {
-                                   const auto& [prefix, filepath] =
-                                           ::split(target.id());
-                                   return scoped_file{filepath};
+                                   return scoped_file{target.path()};
                                });
 
                 for(std::size_t i = 0; i < input_files.size(); ++i) {
-                    const auto& [prefix, filepath] = ::split(targets[i].id());
-                    REQUIRE(::equal(input_files[i].path(), filepath));
+                    REQUIRE(::equal(input_files[i].path(), targets[i].path()));
                 }
             }
         }

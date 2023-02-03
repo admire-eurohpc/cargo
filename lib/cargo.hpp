@@ -59,20 +59,29 @@ private:
 class dataset {
 
 public:
+    enum class type { posix, parallel };
+
     dataset() noexcept = default;
-    explicit dataset(std::string id) noexcept;
+
+    explicit dataset(std::string path,
+                     dataset::type type = dataset::type::posix) noexcept;
 
     [[nodiscard]] std::string
-    id() const noexcept;
+    path() const noexcept;
+
+    [[nodiscard]] bool
+    supports_parallel_transfer() const noexcept;
 
     template <typename Archive>
     void
     serialize(Archive& ar) {
-        ar& m_id;
+        ar& m_path;
+        ar& m_type;
     }
 
 private:
-    std::string m_id;
+    std::string m_path;
+    dataset::type m_type = dataset::type::posix;
 };
 
 

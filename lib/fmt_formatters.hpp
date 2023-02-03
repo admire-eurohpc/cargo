@@ -41,7 +41,7 @@ struct fmt::formatter<cargo::dataset> : formatter<std::string_view> {
     template <typename FormatContext>
     auto
     format(const cargo::dataset& d, FormatContext& ctx) const {
-        const auto str = fmt::format("{{id: {}}}", std::quoted(d.id()));
+        const auto str = fmt::format("{{path: {}}}", std::quoted(d.path()));
         return formatter<std::string_view>::format(str, ctx);
     }
 };

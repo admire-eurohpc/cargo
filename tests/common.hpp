@@ -88,6 +88,7 @@ public:
 };
 
 std::vector<cargo::dataset>
-prepare_datasets(const std::string& pattern, size_t n);
+prepare_datasets(cargo::dataset::type type, const std::string& pattern,
+                 size_t n);
 
 #endif // CARGO_TESTS_COMMON_HPP

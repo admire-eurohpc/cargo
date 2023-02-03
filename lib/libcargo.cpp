@@ -61,12 +61,18 @@ server::address() const noexcept {
     return m_address;
 }
 
-dataset::dataset(std::string id) noexcept : m_id(std::move(id)) {}
+dataset::dataset(std::string path, dataset::type type) noexcept
+    : m_path(std::move(path)), m_type(type) {}
 
 std::string
-dataset::id() const noexcept {
-    return m_id;
+dataset::path() const noexcept {
+    return m_path;
 };
+
+bool
+dataset::supports_parallel_transfer() const noexcept {
+    return m_type == dataset::type::parallel;
+}
 
 transfer::transfer(transfer_id id) noexcept : m_id(id) {}
 

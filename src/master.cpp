@@ -41,39 +41,22 @@ get_address(auto&& req) {
     return req.get_endpoint();
 }
 
-std::tuple<std::string, std::string>
-split(const std::string& id) {
-
-    constexpr auto delim = "://"sv;
-    const auto n = id.find(delim);
-
-    if(n == std::string::npos) {
-        return {std::string{}, id};
-    }
-
-    return {id.substr(0, n), id.substr(n + delim.length(), id.length())};
-}
-
 cargo::transfer_request_message
 create_request_message(const cargo::dataset& input,
                        const cargo::dataset& output) {
 
     cargo::transfer_type tx_type;
 
-    const auto& [input_prefix, input_path] = split(input.id());
-    const auto& [output_prefix, output_path] = split(output.id());
-
-    // FIXME: id should offer member functions to retrieve the parent
-    // namespace
-    if(input_prefix == "lustre") {
+    if(input.supports_parallel_transfer()) {
         tx_type = cargo::parallel_read;
-    } else if(output_prefix == "lustre") {
+    } else if(output.supports_parallel_transfer()) {
         tx_type = cargo::parallel_write;
     } else {
         tx_type = cargo::sequential;
     }
 
-    return cargo::transfer_request_message{input_path, output_path, tx_type};
+    return cargo::transfer_request_message{input.path(), output.path(),
+                                           tx_type};
 }
 
 } // namespace
@@ -128,8 +111,8 @@ transfer_datasets(const net::request& req,
     boost::mpi::communicator world;
     for(auto i = 0u; i < sources.size(); ++i) {
 
-        const auto& input_path = sources[i].id();
-        const auto& output_path = targets[i].id();
+        const auto& input_path = sources[i].path();
+        const auto& output_path = targets[i].path();
 
         const auto m = ::create_request_message(sources[i], targets[i]);
 

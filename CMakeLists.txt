@@ -233,8 +233,10 @@ message(STATUS "[${PROJECT_NAME}] Downloading and building genopts")
 FetchContent_Declare(
   genopts
   GIT_REPOSITORY https://storage.bsc.es/gitlab/utils/genopts
-  GIT_TAG 1dcef400f8fbc6e1969c856ca844707b730c3002 # v0.1.0-pre
-  GIT_SHALLOW ON
+  GIT_TAG c456c2d8ec92f26d9074b123446261103e5c847c # v0.1.0-pre
+  # enabling GIT_SHALLOW when the GIT_TAG value is not backed by an
+  # actual tag is problematic
+  GIT_SHALLOW OFF
   GIT_PROGRESS ON
 )
 
@@ -249,7 +251,7 @@ set(EXPECTED_BUILD_TESTS OFF)
 FetchContent_Declare(
   expected
   GIT_REPOSITORY https://github.com/TartanLlama/expected
-  GIT_TAG b74fecd4448a1a5549402d17ddc51e39faa5020c # latest
+  GIT_TAG 292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362 # v1.1.0
   GIT_SHALLOW ON
   GIT_PROGRESS ON
 )

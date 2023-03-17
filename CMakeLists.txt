@@ -249,7 +249,7 @@ set(EXPECTED_BUILD_TESTS OFF)
 FetchContent_Declare(
   expected
   GIT_REPOSITORY https://github.com/TartanLlama/expected
-  GIT_TAG b74fecd4448a1a5549402d17ddc51e39faa5020c # latest
+  GIT_TAG 292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362 # v1.1.0
   GIT_SHALLOW ON
   GIT_PROGRESS ON
 )

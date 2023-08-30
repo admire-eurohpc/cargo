@@ -23,7 +23,6 @@
 ################################################################################
 
 add_subdirectory(utils)
-add_subdirectory(config)
 add_subdirectory(logger)
 add_subdirectory(net)
 add_subdirectory(posix_file)
@@ -52,7 +51,6 @@ target_include_directories(
 target_link_libraries(
   cargo_server
   PRIVATE config
-          logger
           rpc_server
           cargo
           fmt::fmt

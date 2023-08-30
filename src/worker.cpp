@@ -310,7 +310,8 @@ worker() {
                                                       ranks_to_exclude.end()),
                                 0);
 
-    LOGGER_INIT(fmt::format("worker_{:03}", world.rank()), "console color");
+    LOGGER_INIT(fmt::format("worker_{:03}", world.rank()),
+                logger::console_color);
 
     // Initialization finished
     LOGGER_INFO("Staging process initialized (world_rank {}, workers_rank: {})",

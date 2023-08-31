@@ -159,9 +159,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ### instead, make sure that pkg-config is available
 find_package(PkgConfig REQUIRED)
 
-### boost libraries: required for processing program options
+### boost libraries: required for boost::mpi
 message(STATUS "[${PROJECT_NAME}] Checking for boost libraries")
-find_package(Boost 1.53 REQUIRED COMPONENTS program_options mpi)
+find_package(Boost 1.53 REQUIRED COMPONENTS mpi)
 
 ### transport library
 if (CARGO_TRANSPORT_LIBRARY STREQUAL libfabric)
@@ -216,35 +216,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)
 set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-### file_options: required for reading configuration files
-message(STATUS "[${PROJECT_NAME}] Downloading and building file_options")
-FetchContent_Declare(
-  file_options
-  GIT_REPOSITORY https://storage.bsc.es/gitlab/utils/file_options
-  GIT_TAG bdb4f7f7f2dd731815241fc41afe6373df8f732a # v0.1.0-pre
-  GIT_SHALLOW ON
-  GIT_PROGRESS ON
+### CLI11: used for parsing command-line options
+message(STATUS "[${PROJECT_NAME}] Searching for CLI11")
+FetchContent_Declare(cli11
+GIT_REPOSITORY https://github.com/CLIUtils/CLI11
+GIT_TAG 291c58789c031208f08f4f261a858b5b7083e8e2 # v2.3.2
+GIT_SHALLOW ON
+GIT_PROGRESS ON
 )
-
-FetchContent_MakeAvailable(file_options)
-
-### genopts: required for generating file_options schemas
-message(STATUS "[${PROJECT_NAME}] Downloading and building genopts")
-FetchContent_Declare(
-  genopts
-  GIT_REPOSITORY https://storage.bsc.es/gitlab/utils/genopts
-  GIT_TAG c456c2d8ec92f26d9074b123446261103e5c847c # v0.1.0-pre
-  # enabling GIT_SHALLOW when the GIT_TAG value is not backed by an
-  # actual tag is problematic
-  GIT_SHALLOW OFF
-  GIT_PROGRESS ON
-)
-
-FetchContent_MakeAvailable(genopts)
+FetchContent_MakeAvailable(cli11)
 
 ### expected: required for using tl::expected in the C++ library implementation
 ### until std::expected makes it to C++
-
 message(STATUS "[${PROJECT_NAME}] Downloading and building tl::expected")
 set(EXPECTED_BUILD_PACKAGE OFF)
 set(EXPECTED_BUILD_TESTS OFF)

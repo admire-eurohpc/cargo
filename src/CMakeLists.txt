@@ -55,7 +55,7 @@ target_link_libraries(
           cargo
           fmt::fmt
           MPI::MPI_CXX
-          Boost::program_options
+          CLI11::CLI11
           Boost::serialization
           Boost::mpi
           posix_file

@@ -23,7 +23,6 @@
  *****************************************************************************/
 
 #include <functional>
-#include <config/settings.hpp>
 #include <logger/logger.hpp>
 #include <net/server.hpp>
 

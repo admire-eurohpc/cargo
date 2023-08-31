@@ -39,6 +39,7 @@ target_sources(
           env.hpp
           mpioxx.hpp
           message.hpp
+          proto/rpc/response.hpp
 )
 
 target_include_directories(

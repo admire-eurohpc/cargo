@@ -22,50 +22,48 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef RPC_SERVER_HPP
+#define RPC_SERVER_HPP
 
-#include <utils/signal_listener.hpp>
+#include <optional>
+#include <logger/logger.hpp>
+#include <utility>
 #include <thallium.hpp>
 #include <thallium/serialization/stl/string.hpp>
 #include <thallium/serialization/stl/vector.hpp>
+#include "signal_listener.hpp"
 
-namespace config {
-struct settings;
-} // namespace config
+namespace network {
 
-namespace utils {
-struct signal_listener;
-} // namespace utils
-
-namespace net {
+class endpoint;
 
 using request = thallium::request;
+
+template <typename T>
+using provider = thallium::provider<T>;
 
 class server {
 
 public:
-    template <typename... Handlers>
-    explicit server(config::settings cfg, Handlers&&... handlers)
-        : m_settings(std::move(cfg)) {
-
-        using namespace std::literals;
-
-        const std::string thallim_address =
-                m_settings.transport_protocol() + "://"s +
-                m_settings.bind_address() + ":"s +
-                std::to_string(m_settings.remote_port());
-
-        m_network_engine =
-                thallium::engine(thallim_address, THALLIUM_SERVER_MODE);
-
-        (set_handler(std::forward<Handlers>(handlers)), ...);
-    }
+    server(std::string name, std::string address, bool daemonize,
+           std::filesystem::path rundir,
+           std::optional<std::filesystem::path> pidfile = {});
 
     ~server();
 
-    config::settings
-    get_configuration() const;
+    template <typename... Args>
+    void
+    configure_logger(logger::logger_type type, Args&&... args) {
+        m_logger_config = logger::logger_config(m_name, type,
+                                                std::forward<Args>(args)...);
+    }
+
+    std::optional<endpoint>
+    lookup(const std::string& address) noexcept;
+
+    std::string
+    self_address() const noexcept;
+
     int
     run();
     void
@@ -86,28 +84,38 @@ private:
     daemonize();
     void
     signal_handler(int);
-
     void
     init_logger();
     void
     install_signal_handlers();
-
-    void
-    check_configuration();
     void
     print_greeting();
     void
-    print_configuration();
-    void
     print_farewell();
 
+protected:
+    virtual void
+    check_configuration() const;
+
+    virtual void
+    print_configuration() const;
+
 private:
-    config::settings m_settings;
+    std::string m_name;
+    std::string m_address;
+    bool m_daemonize;
+    std::filesystem::path m_rundir;
+    std::optional<std::filesystem::path> m_pidfile;
+    logger::logger_config m_logger_config;
+
+protected:
     thallium::engine m_network_engine;
-    utils::signal_listener m_signal_listener;
+
+private:
+    signal_listener m_signal_listener;
 };
 
 
-} // namespace net
+} // namespace network
 
-#endif // SERVER_HPP
+#endif // RPC_SERVER_HPP

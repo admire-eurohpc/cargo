@@ -27,6 +27,7 @@
 #include <boost/mpi.hpp>
 #include <boost/mpi/error_string.hpp>
 #include <span>
+#include <thread>
 #include <posix_file/file.hpp>
 #include <posix_file/views.hpp>
 #include "message.hpp"

@@ -94,7 +94,7 @@ ping(const thallium::request& req) {
 }
 
 void
-transfer_datasets(const net::request& req,
+transfer_datasets(const network::request& req,
                   const std::vector<cargo::dataset>& sources,
                   const std::vector<cargo::dataset>& targets) {
 
@@ -138,7 +138,7 @@ transfer_datasets(const net::request& req,
 void
 master(const config::settings& cfg) {
 
-    net::server daemon(cfg);
+    network::server daemon(cfg);
 
     daemon.set_handler("ping"s, handlers::ping);
     daemon.set_handler("transfer_datasets"s, handlers::transfer_datasets);

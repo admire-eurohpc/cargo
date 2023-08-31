@@ -4,20 +4,20 @@
 # This software was partially supported by the EuroHPC-funded project ADMIRE   #
 #   (Project ID: 956748, https://www.admire-eurohpc.eu).                       #
 #                                                                              #
-# This file is part of cargo.                                                  #
+# This file is part of Cargo.                                                  #
 #                                                                              #
-# cargo is free software: you can redistribute it and/or modify                #
+# Cargo is free software: you can redistribute it and/or modify                #
 # it under the terms of the GNU General Public License as published by         #
 # the Free Software Foundation, either version 3 of the License, or            #
 # (at your option) any later version.                                          #
 #                                                                              #
-# cargo is distributed in the hope that it will be useful,                     #
+# Cargo is distributed in the hope that it will be useful,                     #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of               #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
 # GNU General Public License for more details.                                 #
 #                                                                              #
 # You should have received a copy of the GNU General Public License            #
-# along with cargo.  If not, see <https://www.gnu.org/licenses/>.              #
+# along with Cargo.  If not, see <https://www.gnu.org/licenses/>.              #
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
@@ -257,6 +257,33 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(expected)
+
+### Threads: required by ASIO
+find_package(Threads REQUIRED)
+
+### ASIO: used for signal handling
+###
+### ASIO is based on autotools and not CMake package. We can use
+### FetchContent to download it but we need to manually define the imported
+### target ourselves rather than relying on FetchContent_MakeAvailable()
+### to do it.
+message(STATUS "[${PROJECT_NAME}] Searching for ASIO")
+FetchContent_Declare(
+  asio
+  GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+  GIT_TAG asio-1-18-2
+  CONFIGURE_COMMAND "" BUILD_COMMAND ""
+)
+FetchContent_GetProperties(asio)
+if(NOT asio_POPULATED)
+  FetchContent_Populate(asio)
+endif()
+
+add_library(asio INTERFACE)
+target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+target_link_libraries(asio INTERFACE Threads::Threads)
+add_library(asio::asio ALIAS asio)
+
 
 pkg_check_modules(LIBCONFIG IMPORTED_TARGET libconfig>=1.4.9)
 

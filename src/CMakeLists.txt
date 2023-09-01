@@ -22,7 +22,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_subdirectory(utils)
 add_subdirectory(logger)
 add_subdirectory(net)
 add_subdirectory(posix_file)

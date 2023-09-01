@@ -27,6 +27,7 @@
 #include <boost/mpi.hpp>
 #include <boost/mpi/error_string.hpp>
 #include <span>
+#include <thread>
 #include <posix_file/file.hpp>
 #include <posix_file/views.hpp>
 #include "message.hpp"
@@ -310,7 +311,8 @@ worker() {
                                                       ranks_to_exclude.end()),
                                 0);
 
-    LOGGER_INIT(fmt::format("worker_{:03}", world.rank()), "console color");
+    LOGGER_INIT(fmt::format("worker_{:03}", world.rank()),
+                logger::console_color);
 
     // Initialization finished
     LOGGER_INFO("Staging process initialized (world_rank {}, workers_rank: {})",

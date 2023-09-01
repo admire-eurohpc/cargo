@@ -36,7 +36,7 @@ target_include_directories(
 
 set_target_properties(cargo PROPERTIES PUBLIC_HEADER "${public_headers}")
 
-target_link_libraries(cargo PRIVATE logger fmt::fmt thallium)
+target_link_libraries(cargo PRIVATE logger::logger fmt::fmt thallium)
 
 ## Install library + targets ###################################################
 

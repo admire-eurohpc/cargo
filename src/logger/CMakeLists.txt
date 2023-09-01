@@ -22,10 +22,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_subdirectory(logger)
+# get the parent directory of the current directory so we can include
+# headers from these libraries as `<logger/*.hpp>`
+get_filename_component(PARENT_DIRECTORY "../" ABSOLUTE)
 
-target_include_directories(
-  logger INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
+add_library(logger STATIC)
+target_sources(
+  logger
+  INTERFACE logger.h logger.hpp macros.h
+  PRIVATE logger.cpp
 )
 
+target_include_directories(logger PUBLIC ${PARENT_DIRECTORY})
+target_link_libraries(logger PUBLIC spdlog::spdlog fmt::fmt)
 set_property(TARGET logger PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(logger::logger ALIAS logger)

@@ -25,6 +25,26 @@
 #ifndef CARGO_MASTER_HPP
 #define CARGO_MASTER_HPP
 
+#include "net/server.hpp"
+#include "cargo.hpp"
+
+class master_server : public network::server,
+                      public network::provider<master_server> {
+public:
+    master_server(std::string name, std::string address, bool daemonize,
+                  std::filesystem::path rundir,
+                  std::optional<std::filesystem::path> pidfile = {});
+
+private:
+    void
+    ping(const network::request& req);
+
+    void
+    transfer_datasets(const network::request& req,
+                      const std::vector<cargo::dataset>& sources,
+                      const std::vector<cargo::dataset>& targets);
+};
+
 namespace config {
 struct settings;
 } // namespace config

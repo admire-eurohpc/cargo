@@ -23,23 +23,22 @@
  *****************************************************************************/
 
 #include <functional>
-#include <config/settings.hpp>
 #include <logger/logger.hpp>
 #include <net/server.hpp>
 
 #include <cargo.hpp>
 #include <fmt_formatters.hpp>
 #include <boost/mpi.hpp>
+#include <utility>
 #include "message.hpp"
+#include "master.hpp"
+#include "net/utilities.hpp"
+#include "net/request.hpp"
+#include "proto/rpc/response.hpp"
 
 using namespace std::literals;
 
 namespace {
-
-std::string
-get_address(auto&& req) {
-    return req.get_endpoint();
-}
 
 cargo::transfer_request_message
 create_request_message(const cargo::dataset& input,
@@ -63,48 +62,55 @@ create_request_message(const cargo::dataset& input,
 
 using namespace std::literals;
 
-struct remote_procedure {
-    static std::uint64_t
-    new_id() {
-        static std::atomic_uint64_t current_id;
-        return current_id++;
-    }
-};
+master_server::master_server(std::string name, std::string address,
+                             bool daemonize, std::filesystem::path rundir,
+                             std::optional<std::filesystem::path> pidfile)
+    : server(std::move(name), std::move(address), daemonize, std::move(rundir),
+             std::move(pidfile)),
+      provider(m_network_engine, 0) {
 
-namespace handlers {
+#define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
+    provider::define(EXPAND(ping));
+    provider::define(EXPAND(transfer_datasets));
+
+#undef EXPAND
+}
+
+#define RPC_NAME() ("ADM_"s + __FUNCTION__)
 
 void
-ping(const thallium::request& req) {
+master_server::ping(const network::request& req) {
 
-    const auto rpc_id = remote_procedure::new_id();
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
 
-    LOGGER_INFO("rpc id: {} name: {} from: {} => "
-                "body: {{}}",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(get_address(req)));
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
 
-    const auto retval = cargo::error_code{0};
+    LOGGER_INFO("rpc {:>} body: {{}}", rpc);
 
-    LOGGER_INFO("rpc id: {} name: {} to: {} <= "
-                "body: {{retval: {}}}",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(get_address(req)), retval);
+    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
 
-    req.respond(retval);
+    LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
+
+    req.respond(resp);
 }
 
 void
-transfer_datasets(const net::request& req,
-                  const std::vector<cargo::dataset>& sources,
-                  const std::vector<cargo::dataset>& targets) {
+master_server::transfer_datasets(const network::request& req,
+                                 const std::vector<cargo::dataset>& sources,
+                                 const std::vector<cargo::dataset>& targets) {
 
-    const auto rpc_id = remote_procedure::new_id();
-    LOGGER_INFO("rpc id: {} name: {} from: {} => "
-                "body: {{sources: {}, targets: {}}}",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(get_address(req)), sources, targets);
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
 
-    const auto retval = cargo::error_code{0};
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    LOGGER_INFO("rpc {:>} body: {{sources: {}, targets: {}}}", rpc, sources,
+                targets);
+
+    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
 
     assert(sources.size() == targets.size());
 
@@ -124,23 +130,8 @@ transfer_datasets(const net::request& req,
 
     cargo::transfer tx{42};
 
-    LOGGER_INFO("rpc id: {} name: {} to: {} <= "
-                "body: {{retval: {}, transfer: {}}}",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(get_address(req)), retval, tx);
+    LOGGER_INFO("rpc {:<} body: {{retval: {}, transfer: {}}}", rpc,
+                resp.error_code(), tx);
 
-    req.respond(retval);
-}
-
-
-} // namespace handlers
-
-void
-master(const config::settings& cfg) {
-
-    net::server daemon(cfg);
-
-    daemon.set_handler("ping"s, handlers::ping);
-    daemon.set_handler("transfer_datasets"s, handlers::transfer_datasets);
-    daemon.run();
+    req.respond(resp);
 }

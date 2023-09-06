@@ -104,8 +104,7 @@ main(int argc, char* argv[]) {
     mpi::communicator world;
 
     try {
-        if(world.rank() == 0) {
-
+        if(const auto rank = world.rank(); rank == 0) {
             cargo::master_server srv{cfg.progname, cfg.address, cfg.daemonize,
                                      fs::current_path()};
 
@@ -115,9 +114,8 @@ main(int argc, char* argv[]) {
             }
 
             return srv.run();
-
         } else {
-            worker();
+            return cargo::worker{rank}.run();
         }
     } catch(const std::exception& ex) {
         fmt::print(stderr,

@@ -30,6 +30,7 @@
 #include <thread>
 #include <posix_file/file.hpp>
 #include <posix_file/views.hpp>
+#include "worker.hpp"
 #include "message.hpp"
 #include "mpioxx.hpp"
 
@@ -56,6 +57,8 @@ make_communicator(const mpi::communicator& comm, const mpi::group& group,
 
 
 } // namespace
+
+namespace cargo {
 
 using memory_buffer = std::vector<char>;
 using buffer_region = std::span<char>;
@@ -299,8 +302,10 @@ sequential_transfer(const std::filesystem::path& input_path,
     LOGGER_CRITICAL("{}: to be implemented", __FUNCTION__);
 }
 
-void
-worker() {
+worker::worker(int rank) : m_rank(rank) {}
+
+int
+worker::run() {
 
     // Create a separate communicator only for worker processes
     const mpi::communicator world;
@@ -330,21 +335,21 @@ worker() {
             continue;
         }
 
-        switch(static_cast<cargo::tag>(msg->tag())) {
-            case cargo::tag::transfer: {
-                cargo::transfer_request m;
+        switch(static_cast<tag>(msg->tag())) {
+            case tag::transfer: {
+                transfer_request m;
                 world.recv(0, msg->tag(), m);
                 LOGGER_DEBUG("Transfer request received!: {}", m);
 
                 switch(m.type()) {
-                    case cargo::parallel_read:
-                        ::mpio_read(workers, m.input_path(), m.output_path());
+                    case parallel_read:
+                        mpio_read(workers, m.input_path(), m.output_path());
                         break;
-                    case cargo::parallel_write:
-                        ::mpio_write(workers, m.input_path(), m.output_path());
+                    case parallel_write:
+                        mpio_write(workers, m.input_path(), m.output_path());
                         break;
-                    case cargo::sequential:
-                        ::sequential_transfer(m.input_path(), m.output_path());
+                    case sequential:
+                        sequential_transfer(m.input_path(), m.output_path());
                         break;
                 }
 
@@ -352,9 +357,8 @@ worker() {
                         "Transfer finished! (world_rank {}, workers_rank: {})",
                         world.rank(), workers.rank());
 
-                world.send(msg->source(),
-                           static_cast<int>(cargo::tag::status),
-                           cargo::transfer_status{m.id()});
+                world.send(msg->source(), static_cast<int>(tag::status),
+                           transfer_status{m.id()});
 
                 break;
             }
@@ -365,4 +369,8 @@ worker() {
                 break;
         }
     }
+
+    return 0;
 }
+
+} // namespace cargo

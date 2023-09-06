@@ -26,7 +26,20 @@
 #ifndef CARGO_WORKER_HPP
 #define CARGO_WORKER_HPP
 
-void
-worker();
+namespace cargo {
+
+class worker {
+public:
+
+    worker(int rank);
+
+    int
+    run();
+
+private:
+    int m_rank;
+};
+
+} // namespace cargo
 
 #endif // CARGO_WORKER_HPP

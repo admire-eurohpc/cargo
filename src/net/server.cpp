@@ -379,6 +379,7 @@ server::teardown_and_exit() {
 
 void
 server::shutdown() {
+    m_shutting_down = true;
     m_network_engine.finalize();
 }
 

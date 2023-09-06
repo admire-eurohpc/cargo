@@ -30,6 +30,7 @@
 #include <fmt_formatters.hpp>
 #include <boost/mpi.hpp>
 #include <utility>
+#include <boost/mpi/communicator.hpp>
 #include "message.hpp"
 #include "master.hpp"
 #include "net/utilities.hpp"
@@ -37,13 +38,14 @@
 #include "proto/rpc/response.hpp"
 
 using namespace std::literals;
+namespace mpi = boost::mpi;
 
 namespace {
 
-cargo::transfer_request_message
-create_request_message(const cargo::dataset& input,
-                       const cargo::dataset& output) {
+cargo::transfer_request
+make_request(const cargo::dataset& input, const cargo::dataset& output) {
 
+    static std::uint64_t id = 0;
     cargo::transfer_type tx_type;
 
     if(input.supports_parallel_transfer()) {
@@ -54,33 +56,80 @@ create_request_message(const cargo::dataset& input,
         tx_type = cargo::sequential;
     }
 
-    return cargo::transfer_request_message{input.path(), output.path(),
-                                           tx_type};
+    return cargo::transfer_request{id++, input.path(), output.path(), tx_type};
 }
 
 } // namespace
 
 using namespace std::literals;
 
+namespace cargo {
+
 master_server::master_server(std::string name, std::string address,
                              bool daemonize, std::filesystem::path rundir,
                              std::optional<std::filesystem::path> pidfile)
     : server(std::move(name), std::move(address), daemonize, std::move(rundir),
              std::move(pidfile)),
-      provider(m_network_engine, 0) {
+      provider(m_network_engine, 0),
+      m_mpi_listener_ess(thallium::xstream::create()),
+      m_mpi_listener_ult(m_mpi_listener_ess->make_thread(
+              [this]() { mpi_listener_ult(); })) {
 
 #define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
     provider::define(EXPAND(ping));
     provider::define(EXPAND(transfer_datasets));
 
 #undef EXPAND
+
+    // ESs and ULTs need to be joined before the network engine is
+    // actually finalized, and ~master_server() is too late for that.
+    // The push_prefinalize_callback() and push_finalize_callback() functions
+    // serve this purpose. The former is called before Mercury is finalized,
+    // while the latter is called in between that and Argobots finalization.
+    m_network_engine.push_finalize_callback([this]() {
+        m_mpi_listener_ult->join();
+        m_mpi_listener_ult = thallium::managed<thallium::thread>{};
+        m_mpi_listener_ess->join();
+        m_mpi_listener_ess = thallium::managed<thallium::xstream>{};
+    });
+}
+
+master_server::~master_server() {}
+
+void
+master_server::mpi_listener_ult() {
+
+    mpi::communicator world;
+
+    while(!m_shutting_down) {
+
+        auto msg = world.iprobe();
+
+        if(!msg) {
+            thallium::thread::self().sleep(m_network_engine, 150);
+            continue;
+        }
+
+        switch(static_cast<cargo::tag>(msg->tag())) {
+            case tag::status: {
+                transfer_status st;
+                world.recv(mpi::any_source, msg->tag(), st);
+                LOGGER_INFO("[{}] Status received: {}", msg->source(), st);
+                break;
+            }
+
+            default:
+                LOGGER_WARN("[{}] Unexpected message tag: {}", msg->source(),
+                            msg->tag());
+                break;
+        }
+    }
 }
 
 #define RPC_NAME() ("ADM_"s + __FUNCTION__)
 
 void
 master_server::ping(const network::request& req) {
-
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
@@ -89,7 +138,7 @@ master_server::ping(const network::request& req) {
 
     LOGGER_INFO("rpc {:>} body: {{}}", rpc);
 
-    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
+    const auto resp = generic_response{rpc.id(), error_code{0}};
 
     LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
 
@@ -98,9 +147,8 @@ master_server::ping(const network::request& req) {
 
 void
 master_server::transfer_datasets(const network::request& req,
-                                 const std::vector<cargo::dataset>& sources,
-                                 const std::vector<cargo::dataset>& targets) {
-
+                                 const std::vector<dataset>& sources,
+                                 const std::vector<dataset>& targets) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
@@ -110,28 +158,29 @@ master_server::transfer_datasets(const network::request& req,
     LOGGER_INFO("rpc {:>} body: {{sources: {}, targets: {}}}", rpc, sources,
                 targets);
 
-    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
+    const auto resp = generic_response{rpc.id(), error_code{0}};
 
     assert(sources.size() == targets.size());
 
-    boost::mpi::communicator world;
+    mpi::communicator world;
     for(auto i = 0u; i < sources.size(); ++i) {
 
         const auto& input_path = sources[i].path();
         const auto& output_path = targets[i].path();
 
-        const auto m = ::create_request_message(sources[i], targets[i]);
+        const auto m = ::make_request(sources[i], targets[i]);
 
         for(int rank = 1; rank < world.size(); ++rank) {
-            world.send(rank, static_cast<int>(cargo::message_tags::transfer),
-                       m);
+            world.send(rank, static_cast<int>(tag::transfer), m);
         }
     }
 
-    cargo::transfer tx{42};
+    transfer tx{42};
 
     LOGGER_INFO("rpc {:<} body: {{retval: {}, transfer: {}}}", rpc,
                 resp.error_code(), tx);
 
     req.respond(resp);
 }
+
+} // namespace cargo

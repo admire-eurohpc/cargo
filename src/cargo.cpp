@@ -106,8 +106,8 @@ main(int argc, char* argv[]) {
     try {
         if(world.rank() == 0) {
 
-            master_server srv{cfg.progname, cfg.address, cfg.daemonize,
-                              fs::current_path()};
+            cargo::master_server srv{cfg.progname, cfg.address, cfg.daemonize,
+                                     fs::current_path()};
 
             if(cfg.output_file) {
                 srv.configure_logger(logger::logger_type::file,

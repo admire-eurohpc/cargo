@@ -330,10 +330,10 @@ worker() {
             continue;
         }
 
-        switch(static_cast<cargo::message_tags>(msg->tag())) {
-            case cargo::message_tags::transfer: {
-                cargo::transfer_request_message m;
-                world.recv(mpi::any_source, msg->tag(), m);
+        switch(static_cast<cargo::tag>(msg->tag())) {
+            case cargo::tag::transfer: {
+                cargo::transfer_request m;
+                world.recv(0, msg->tag(), m);
                 LOGGER_DEBUG("Transfer request received!: {}", m);
 
                 switch(m.type()) {
@@ -347,18 +347,21 @@ worker() {
                         ::sequential_transfer(m.input_path(), m.output_path());
                         break;
                 }
+
+                LOGGER_CRITICAL(
+                        "Transfer finished! (world_rank {}, workers_rank: {})",
+                        world.rank(), workers.rank());
+
+                world.send(msg->source(),
+                           static_cast<int>(cargo::tag::status),
+                           cargo::transfer_status{m.id()});
+
                 break;
             }
 
-            case cargo::message_tags::status: {
-                cargo::transfer_status_message m;
-                world.recv(mpi::any_source, msg->tag(), m);
-                LOGGER_DEBUG("Transfer status query received!: {}", m);
-                break;
-            }
-
-            case cargo::message_tags::shutdown:
-                done = true;
+            default:
+                LOGGER_WARN("[{}] Unexpected message tag: {}", msg->source(),
+                            msg->tag());
                 break;
         }
     }

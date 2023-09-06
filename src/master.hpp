@@ -28,6 +28,8 @@
 #include "net/server.hpp"
 #include "cargo.hpp"
 
+namespace cargo {
+
 class master_server : public network::server,
                       public network::provider<master_server> {
 public:
@@ -35,7 +37,12 @@ public:
                   std::filesystem::path rundir,
                   std::optional<std::filesystem::path> pidfile = {});
 
+    ~master_server();
+
 private:
+    void
+    mpi_listener_ult();
+
     void
     ping(const network::request& req);
 
@@ -43,13 +50,14 @@ private:
     transfer_datasets(const network::request& req,
                       const std::vector<cargo::dataset>& sources,
                       const std::vector<cargo::dataset>& targets);
+
+private:
+    // Dedicated execution stream for the MPI listener ULT
+    thallium::managed<thallium::xstream> m_mpi_listener_ess;
+    // ULT for the MPI listener
+    thallium::managed<thallium::thread> m_mpi_listener_ult;
 };
 
-namespace config {
-struct settings;
-} // namespace config
-
-void
-master(const config::settings& cfg);
+} // namespace cargo
 
 #endif // CARGO_MASTER_HPP

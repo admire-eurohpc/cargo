@@ -33,19 +33,25 @@
 namespace cargo {
 
 enum transfer_type { parallel_read, parallel_write, sequential };
-enum class message_tags { transfer, status, shutdown };
+enum class tag : int { transfer, status };
 
-class transfer_request_message {
+class transfer_request {
 
     friend class boost::serialization::access;
 
 public:
-    transfer_request_message() = default;
+    transfer_request() = default;
 
-    transfer_request_message(const std::filesystem::path& input_path,
-                             const std::filesystem::path& output_path,
-                             transfer_type type)
-        : m_input_path(input_path), m_output_path(output_path), m_type(type) {}
+    transfer_request(std::uint64_t id, const std::filesystem::path& input_path,
+                     const std::filesystem::path& output_path,
+                     transfer_type type)
+        : m_id(id), m_input_path(input_path), m_output_path(output_path),
+          m_type(type) {}
+
+    std::uint64_t
+    id() const {
+        return m_id;
+    }
 
     std::filesystem::path
     input_path() const {
@@ -68,24 +74,26 @@ private:
     serialize(Archive& ar, const unsigned int version) {
         (void) version;
 
-        ar& m_input_path;
-        ar& m_output_path;
-        ar& m_type;
+        ar & m_id;
+        ar & m_input_path;
+        ar & m_output_path;
+        ar & m_type;
     }
 
+    std::uint64_t m_id;
     std::string m_input_path;
     std::string m_output_path;
     transfer_type m_type;
 };
 
-class transfer_status_message {
+class transfer_status {
 
     friend class boost::serialization::access;
 
 public:
-    transfer_status_message() = default;
+    transfer_status() = default;
 
-    explicit transfer_status_message(std::uint64_t transfer_id)
+    explicit transfer_status(std::uint64_t transfer_id)
         : m_transfer_id(transfer_id) {}
 
     std::uint64_t
@@ -108,12 +116,11 @@ private:
 } // namespace cargo
 
 template <>
-struct fmt::formatter<cargo::transfer_request_message>
-    : formatter<std::string_view> {
+struct fmt::formatter<cargo::transfer_request> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto
-    format(const cargo::transfer_request_message& r, FormatContext& ctx) const {
+    format(const cargo::transfer_request& r, FormatContext& ctx) const {
         const auto str = fmt::format("{{input_path: {}, output_path: {}}}",
                                      r.input_path(), r.output_path());
         return formatter<std::string_view>::format(str, ctx);
@@ -121,13 +128,12 @@ struct fmt::formatter<cargo::transfer_request_message>
 };
 
 template <>
-struct fmt::formatter<cargo::transfer_status_message>
-    : formatter<std::string_view> {
+struct fmt::formatter<cargo::transfer_status> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto
-    format(const cargo::transfer_status_message& s, FormatContext& ctx) const {
-        const auto str = fmt::format("{{transfer_id: {}}}", s.transfer_id());
+    format(const cargo::transfer_status& s, FormatContext& ctx) const {
+        const auto str = fmt::format("{{id: {}}}", s.transfer_id());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

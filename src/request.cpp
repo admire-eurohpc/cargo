@@ -22,45 +22,22 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef CARGO_MASTER_HPP
-#define CARGO_MASTER_HPP
-
-#include "net/server.hpp"
 #include "cargo.hpp"
-#include "request_manager.hpp"
+#include "request.hpp"
 
 namespace cargo {
 
-class master_server : public network::server,
-                      public network::provider<master_server> {
-public:
-    master_server(std::string name, std::string address, bool daemonize,
-                  std::filesystem::path rundir,
-                  std::optional<std::filesystem::path> pidfile = {});
+request::request(std::uint64_t tid, std::size_t nworkers)
+    : m_tid(tid), m_nworkers(nworkers) {}
 
-    ~master_server();
+[[nodiscard]] std::uint64_t
+request::tid() const {
+    return m_tid;
+}
 
-private:
-    void
-    mpi_listener_ult();
-
-    void
-    ping(const network::request& req);
-
-    void
-    transfer_datasets(const network::request& req,
-                      const std::vector<cargo::dataset>& sources,
-                      const std::vector<cargo::dataset>& targets);
-
-private:
-    // Dedicated execution stream for the MPI listener ULT
-    thallium::managed<thallium::xstream> m_mpi_listener_ess;
-    // ULT for the MPI listener
-    thallium::managed<thallium::thread> m_mpi_listener_ult;
-    // Request manager
-    request_manager m_request_manager;
-};
+[[nodiscard]] std::size_t
+request::nworkers() const {
+    return m_nworkers;
+}
 
 } // namespace cargo
-
-#endif // CARGO_MASTER_HPP

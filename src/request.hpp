@@ -22,45 +22,37 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef CARGO_MASTER_HPP
-#define CARGO_MASTER_HPP
+#ifndef CARGO_REQUEST_HPP
+#define CARGO_REQUEST_HPP
 
-#include "net/server.hpp"
-#include "cargo.hpp"
-#include "request_manager.hpp"
+#include <cstdint>
+#include <vector>
 
 namespace cargo {
 
-class master_server : public network::server,
-                      public network::provider<master_server> {
+class dataset;
+
+class request {
+
 public:
-    master_server(std::string name, std::string address, bool daemonize,
-                  std::filesystem::path rundir,
-                  std::optional<std::filesystem::path> pidfile = {});
+    request(std::uint64_t id, std::size_t nworkers);
 
-    ~master_server();
+    [[nodiscard]] std::uint64_t
+    tid() const;
 
-private:
-    void
-    mpi_listener_ult();
-
-    void
-    ping(const network::request& req);
-
-    void
-    transfer_datasets(const network::request& req,
-                      const std::vector<cargo::dataset>& sources,
-                      const std::vector<cargo::dataset>& targets);
+    [[nodiscard]] std::size_t
+    nworkers() const;
 
 private:
-    // Dedicated execution stream for the MPI listener ULT
-    thallium::managed<thallium::xstream> m_mpi_listener_ess;
-    // ULT for the MPI listener
-    thallium::managed<thallium::thread> m_mpi_listener_ult;
-    // Request manager
-    request_manager m_request_manager;
+    /** Unique identifier for the request */
+    std::uint64_t m_tid;
+    /** Number of workers to be used for the request */
+    std::size_t m_nworkers;
 };
+
+enum class part_status { pending, running, completed, failed };
+enum class request_status { pending, running, completed, failed };
 
 } // namespace cargo
 
-#endif // CARGO_MASTER_HPP
+#endif // CARGO_REQUEST_HPP

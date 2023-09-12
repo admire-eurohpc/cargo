@@ -36,6 +36,7 @@
 #include "net/utilities.hpp"
 #include "net/request.hpp"
 #include "proto/rpc/response.hpp"
+#include "request.hpp"
 
 using namespace std::literals;
 namespace mpi = boost::mpi;
@@ -43,7 +44,7 @@ namespace mpi = boost::mpi;
 namespace {
 
 cargo::transfer_request
-make_request(const cargo::dataset& input, const cargo::dataset& output) {
+make_message(const cargo::dataset& input, const cargo::dataset& output) {
 
     static std::uint64_t id = 0;
     cargo::transfer_type tx_type;
@@ -152,35 +153,39 @@ master_server::transfer_datasets(const network::request& req,
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
+    using proto::response_with_id;
 
+    mpi::communicator world;
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
 
     LOGGER_INFO("rpc {:>} body: {{sources: {}, targets: {}}}", rpc, sources,
                 targets);
 
-    const auto resp = generic_response{rpc.id(), error_code{0}};
+    m_request_manager.create(world.size() - 1, sources, targets)
+            .or_else([&](auto&& ec) {
+                LOGGER_ERROR("Failed to create request: {}", ec);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
+                req.respond(generic_response{rpc.id(), ec});
+            })
+            .map([&](auto&& r) {
+                assert(sources.size() == targets.size());
 
-    assert(sources.size() == targets.size());
+                for(auto i = 0u; i < sources.size(); ++i) {
+                    const auto& s = sources[i];
+                    const auto& d = targets[i];
 
-    mpi::communicator world;
-    for(auto i = 0u; i < sources.size(); ++i) {
+                    for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
+                        world.send(static_cast<int>(rank),
+                                   static_cast<int>(tag::transfer),
+                                   make_message(s, d));
+                    }
+                }
 
-        const auto& input_path = sources[i].path();
-        const auto& output_path = targets[i].path();
-
-        const auto m = ::make_request(sources[i], targets[i]);
-
-        for(int rank = 1; rank < world.size(); ++rank) {
-            world.send(rank, static_cast<int>(tag::transfer), m);
-        }
-    }
-
-    transfer tx{42};
-
-    LOGGER_INFO("rpc {:<} body: {{retval: {}, transfer: {}}}", rpc,
-                resp.error_code(), tx);
-
-    req.respond(resp);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}, transfer_id: {}}}",
+                            rpc, error_code::success, r.id());
+                req.respond(response_with_id{rpc.id(), error_code::success,
+                                             r.id()});
+            });
 }
 
 } // namespace cargo

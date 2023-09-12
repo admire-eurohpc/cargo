@@ -39,6 +39,11 @@ target_sources(
           env.hpp
           mpioxx.hpp
           message.hpp
+          request.cpp
+          request.hpp
+          request_manager.cpp
+          request_manager.hpp
+          shared_mutex.hpp
           proto/rpc/response.hpp
 )
 

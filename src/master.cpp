@@ -139,7 +139,7 @@ master_server::ping(const network::request& req) {
 
     LOGGER_INFO("rpc {:>} body: {{}}", rpc);
 
-    const auto resp = generic_response{rpc.id(), error_code{0}};
+    const auto resp = generic_response{rpc.id(), error_code::success};
 
     LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
 

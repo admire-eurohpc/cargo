@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <string_view>
 #include <fmt/format.h>
+#include "cargo/error.hpp"
 
 namespace cargo {
 
@@ -66,6 +67,16 @@ struct fmt::formatter<cargo::transfer> : formatter<std::string_view> {
     format(const cargo::transfer& tx, FormatContext& ctx) const {
         const auto str = fmt::format("{{id: {}}}", tx.id());
         return formatter<std::string_view>::format(str, ctx);
+    }
+};
+
+template <>
+struct fmt::formatter<cargo::error_code> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::error_code& ec, FormatContext& ctx) const {
+        return formatter<std::string_view>::format(ec.name(), ctx);
     }
 };
 

@@ -24,9 +24,10 @@
 
 add_library(cargo SHARED)
 
-target_sources(cargo PRIVATE cargo.hpp fmt_formatters.hpp libcargo.cpp)
+target_sources(cargo PRIVATE cargo.hpp fmt_formatters.hpp cargo/error.hpp
+        libcargo.cpp error.cpp)
 
-list(APPEND public_headers "cargo.hpp")
+list(APPEND public_headers "cargo.hpp;cargo/error.hpp")
 list(APPEND public_headers "fmt_formatters.hpp")
 
 target_include_directories(
@@ -36,7 +37,14 @@ target_include_directories(
 
 set_target_properties(cargo PROPERTIES PUBLIC_HEADER "${public_headers}")
 
-target_link_libraries(cargo PRIVATE logger::logger fmt::fmt thallium)
+target_link_libraries(cargo PRIVATE
+        logger::logger
+        fmt::fmt
+        thallium
+        MPI::MPI_CXX
+        Boost::serialization
+        Boost::mpi
+)
 
 ## Install library + targets ###################################################
 

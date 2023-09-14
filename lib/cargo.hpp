@@ -28,11 +28,11 @@
 
 #include <string>
 #include <vector>
+#include <cargo/error.hpp>
 
 namespace cargo {
 
 using transfer_id = std::uint64_t;
-using error_code = std::int32_t;
 
 /**
  * A Cargo server
@@ -75,8 +75,8 @@ public:
     template <typename Archive>
     void
     serialize(Archive& ar) {
-        ar& m_path;
-        ar& m_type;
+        ar & m_path;
+        ar & m_type;
     }
 
 private:
@@ -100,7 +100,7 @@ public:
     template <typename Archive>
     void
     serialize(Archive& ar) {
-        ar& m_id;
+        ar & m_id;
     }
 
 private:
@@ -116,7 +116,7 @@ private:
  * @param targets The output datasets that should be generated.
  * @return A transfer
  */
-cargo::transfer
+transfer
 transfer_datasets(const server& srv, const std::vector<dataset>& sources,
                   const std::vector<dataset>& targets);
 

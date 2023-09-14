@@ -27,8 +27,9 @@
 
 #include <cstdint>
 #include <optional>
+#include <net/serialization.hpp>
 
-namespace proto {
+namespace cargo::proto {
 
 template <typename Error>
 class generic_response {
@@ -36,8 +37,11 @@ class generic_response {
 public:
     constexpr generic_response() noexcept = default;
 
-    constexpr generic_response(std::uint64_t op_id, Error&& ec) noexcept
+    constexpr generic_response(std::uint64_t op_id, const Error& ec) noexcept
         : m_op_id(op_id), m_error_code(ec) {}
+
+    constexpr generic_response(std::uint64_t op_id, Error&& ec) noexcept
+        : m_op_id(op_id), m_error_code(std::move(ec)) {}
 
     [[nodiscard]] constexpr std::uint64_t
     op_id() const noexcept {
@@ -61,15 +65,20 @@ private:
     Error m_error_code{};
 };
 
-template <typename Error, typename Value>
+template <typename Value, typename Error>
 class response_with_value : public generic_response<Error> {
 
 public:
     constexpr response_with_value() noexcept = default;
 
-    constexpr response_with_value(std::uint64_t op_id, Error&& ec,
+    constexpr response_with_value(std::uint64_t op_id, const Error& ec,
                                   std::optional<Value> value) noexcept
         : generic_response<Error>(op_id, ec), m_value(std::move(value)) {}
+
+    constexpr response_with_value(std::uint64_t op_id, Error&& ec,
+                                  std::optional<Value> value) noexcept
+        : generic_response<Error>(op_id, std::move(ec)),
+          m_value(std::move(value)) {}
 
     constexpr auto
     value() const noexcept {
@@ -92,8 +101,8 @@ private:
 };
 
 template <typename Error>
-using response_with_id = response_with_value<Error, std::uint64_t>;
+using response_with_id = response_with_value<std::uint64_t, Error>;
 
-} // namespace proto
+} // namespace cargo::proto
 
 #endif // CARGO_PROTO_RPC_RESPONSE_HPP

@@ -22,83 +22,93 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef CARGO_MESSAGE_HPP
-#define CARGO_MESSAGE_HPP
+#ifndef CARGO_PROTO_MPI_MESSAGE_HPP
+#define CARGO_PROTO_MPI_MESSAGE_HPP
 
 #include <fmt/format.h>
 #include <filesystem>
 #include <boost/archive/binary_oarchive.hpp>
 #include <utility>
+#include "cargo/error.hpp"
 
 namespace cargo {
 
-enum transfer_type { parallel_read, parallel_write, sequential };
-enum class tag : int { transfer, status };
+enum class tag : int { pread, pwrite, sequential, status };
 
-class transfer_request {
+class transfer_message {
 
     friend class boost::serialization::access;
 
 public:
-    transfer_request() = default;
+    transfer_message() = default;
 
-    transfer_request(std::uint64_t id, const std::filesystem::path& input_path,
-                     const std::filesystem::path& output_path,
-                     transfer_type type)
-        : m_id(id), m_input_path(input_path), m_output_path(output_path),
-          m_type(type) {}
+    transfer_message(std::uint64_t tid, std::uint32_t seqno,
+                     std::string input_path, std::string output_path)
+        : m_tid(tid), m_seqno(seqno), m_input_path(std::move(input_path)),
+          m_output_path(std::move(output_path)) {}
 
-    std::uint64_t
-    id() const {
-        return m_id;
+    [[nodiscard]] std::uint64_t
+    tid() const {
+        return m_tid;
     }
 
-    std::filesystem::path
+    [[nodiscard]] std::uint32_t
+    seqno() const {
+        return m_seqno;
+    }
+
+    [[nodiscard]] const std::string&
     input_path() const {
         return m_input_path;
     }
 
-    std::filesystem::path
+    [[nodiscard]] const std::string&
     output_path() const {
         return m_output_path;
     }
 
-    transfer_type
-    type() const {
-        return m_type;
-    }
-
 private:
     template <class Archive>
     void
     serialize(Archive& ar, const unsigned int version) {
         (void) version;
 
-        ar & m_id;
+        ar & m_tid;
+        ar & m_seqno;
         ar & m_input_path;
         ar & m_output_path;
-        ar & m_type;
     }
 
-    std::uint64_t m_id;
+    std::uint64_t m_tid{};
+    std::uint32_t m_seqno{};
     std::string m_input_path;
     std::string m_output_path;
-    transfer_type m_type;
 };
 
-class transfer_status {
+class status_message {
 
     friend class boost::serialization::access;
 
 public:
-    transfer_status() = default;
+    status_message() = default;
 
-    explicit transfer_status(std::uint64_t transfer_id)
-        : m_transfer_id(transfer_id) {}
+    status_message(std::uint64_t tid, std::uint32_t seqno,
+                   cargo::error_code error_code)
+        : m_tid(tid), m_seqno(seqno), m_error_code(error_code) {}
 
-    std::uint64_t
-    transfer_id() const {
-        return m_transfer_id;
+    [[nodiscard]] std::uint64_t
+    tid() const {
+        return m_tid;
+    }
+
+    [[nodiscard]] std::uint32_t
+    seqno() const {
+        return m_seqno;
+    }
+
+    [[nodiscard]] cargo::error_code
+    error_code() const {
+        return m_error_code;
     }
 
 private:
@@ -107,35 +117,41 @@ private:
     serialize(Archive& ar, const unsigned int version) {
         (void) version;
 
-        ar& m_transfer_id;
+        ar & m_tid;
+        ar & m_seqno;
+        ar & m_error_code;
     }
 
-    std::uint64_t m_transfer_id{};
+    std::uint64_t m_tid{};
+    std::uint32_t m_seqno{};
+    cargo::error_code m_error_code{};
 };
 
 } // namespace cargo
 
 template <>
-struct fmt::formatter<cargo::transfer_request> : formatter<std::string_view> {
+struct fmt::formatter<cargo::transfer_message> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto
-    format(const cargo::transfer_request& r, FormatContext& ctx) const {
-        const auto str = fmt::format("{{input_path: {}, output_path: {}}}",
-                                     r.input_path(), r.output_path());
+    format(const cargo::transfer_message& r, FormatContext& ctx) const {
+        const auto str = fmt::format(
+                "{{tid: {}, seqno: {}, input_path: {}, output_path: {}}}",
+                r.tid(), r.seqno(), r.input_path(), r.output_path());
         return formatter<std::string_view>::format(str, ctx);
     }
 };
 
 template <>
-struct fmt::formatter<cargo::transfer_status> : formatter<std::string_view> {
+struct fmt::formatter<cargo::status_message> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto
-    format(const cargo::transfer_status& s, FormatContext& ctx) const {
-        const auto str = fmt::format("{{id: {}}}", s.transfer_id());
+    format(const cargo::status_message& s, FormatContext& ctx) const {
+        const auto str = fmt::format("{{tid: {}, seqno: {}, error_code: {}}}",
+                                     s.tid(), s.seqno(), s.error_code());
         return formatter<std::string_view>::format(str, ctx);
     }
 };
 
-#endif // CARGO_MESSAGE_HPP
+#endif // CARGO_PROTO_MPI_MESSAGE_HPP

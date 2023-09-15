@@ -31,7 +31,7 @@
 #include <posix_file/file.hpp>
 #include <posix_file/views.hpp>
 #include "worker.hpp"
-#include "message.hpp"
+#include "proto/mpi/message.hpp"
 #include "mpioxx.hpp"
 
 namespace mpi = boost::mpi;
@@ -337,7 +337,7 @@ worker::run() {
 
         switch(static_cast<tag>(msg->tag())) {
             case tag::transfer: {
-                transfer_request m;
+                transfer_message m;
                 world.recv(0, msg->tag(), m);
                 LOGGER_DEBUG("Transfer request received!: {}", m);
 
@@ -358,7 +358,8 @@ worker::run() {
                         world.rank(), workers.rank());
 
                 world.send(msg->source(), static_cast<int>(tag::status),
-                           transfer_status{m.id()});
+                           status_message{m.tid(), m.seqno(),
+                                          error_code::success});
 
                 break;
             }

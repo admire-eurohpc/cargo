@@ -38,13 +38,13 @@ target_sources(
           worker.hpp
           env.hpp
           mpioxx.hpp
-          message.hpp
           request.cpp
           request.hpp
           request_manager.cpp
           request_manager.hpp
           shared_mutex.hpp
           proto/rpc/response.hpp
+          proto/mpi/message.hpp
 )
 
 target_include_directories(

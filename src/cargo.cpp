@@ -35,7 +35,7 @@
 
 #include <version.hpp>
 #include "master.hpp"
-#include "worker.hpp"
+#include "worker/worker.hpp"
 #include "env.hpp"
 
 namespace fs = std::filesystem;

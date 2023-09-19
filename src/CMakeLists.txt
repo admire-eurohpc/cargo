@@ -34,8 +34,17 @@ target_sources(
   PRIVATE cargo.cpp
           master.cpp
           master.hpp
-          worker.cpp
-          worker.hpp
+          worker/memory.hpp
+          worker/mpio_read.cpp
+          worker/mpio_read.hpp
+          worker/mpio_write.hpp
+          worker/mpio_write.cpp
+          worker/ops.cpp
+          worker/ops.hpp
+          worker/sequential.cpp
+          worker/sequential.hpp
+          worker/worker.cpp
+          worker/worker.hpp
           env.hpp
           mpioxx.hpp
           request.cpp

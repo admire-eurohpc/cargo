@@ -30,10 +30,38 @@
 #include <boost/mpi/error_string.hpp>
 #include <filesystem>
 #include <fmt/format.h>
+#include <logger/logger.hpp>
 
 // very simple RAII wrappers for some MPI types + utility functions
 
 namespace mpioxx {
+
+class io_error : public std::exception {
+
+public:
+    io_error(std::string_view fun, int ec) : m_fun(fun), m_error_code(ec) {}
+
+    [[nodiscard]] std::uint32_t
+    error_code() const noexcept {
+        return m_error_code;
+    }
+
+    [[nodiscard]] const char*
+    what() const noexcept override {
+        m_message.assign(boost::mpi::error_string(m_error_code));
+        return m_message.c_str();
+    }
+
+    [[nodiscard]] std::string_view
+    where() const noexcept {
+        return m_fun;
+    }
+
+private:
+    mutable std::string m_message;
+    std::string_view m_fun;
+    int m_error_code;
+};
 
 using offset = MPI_Offset;
 
@@ -86,6 +114,7 @@ operator^=(file_open_mode& a, file_open_mode b) {
 }
 
 class file {
+
 public:
     explicit file(const MPI_File& file) : m_file(file) {}
 
@@ -109,9 +138,7 @@ public:
                    MPI_File_open(comm, filepath.c_str(), static_cast<int>(mode),
                                  MPI_INFO_NULL, &result);
            ec != MPI_SUCCESS) {
-            LOGGER_ERROR("MPI_File_open() failed: {}",
-                         boost::mpi::error_string(ec));
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            throw io_error("MPI_File_open", ec);
         }
 
         return file{result};
@@ -120,20 +147,16 @@ public:
     void
     close() {
         if(const auto ec = MPI_File_close(&m_file); ec != MPI_SUCCESS) {
-            LOGGER_ERROR("MPI_File_close() failed: {}",
-                         boost::mpi::error_string(ec));
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            throw io_error("MPI_File_close", ec);
         }
     }
 
-    offset
+    [[nodiscard]] offset
     size() const {
         MPI_Offset result;
         if(const auto ec = MPI_File_get_size(m_file, &result);
            ec != MPI_SUCCESS) {
-            LOGGER_ERROR("MPI_File_get_size() failed: {}",
-                         boost::mpi::error_string(ec));
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            throw io_error("MPI_File_get_size", ec);
         }
         return result;
     }

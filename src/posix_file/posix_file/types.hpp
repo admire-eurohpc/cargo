@@ -26,6 +26,8 @@
 #ifndef POSIX_FILE_TYPES_HPP
 #define POSIX_FILE_TYPES_HPP
 
+#include <cstddef>
+
 namespace posix_file {
 
 using offset = std::size_t;

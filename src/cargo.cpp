@@ -63,8 +63,8 @@ parse_command_line(int argc, char* argv[]) {
 
     // force logging messages to file
     app.add_option("-o,--output", cfg.output_file,
-                   "Write any output to FILENAME rather than sending it to the "
-                   "console")
+                   "Write any output to FILENAME.<pid> rather than sending it "
+                   "to the console.")
             ->option_text("FILENAME");
 
     app.add_option("-l,--listen", cfg.address,
@@ -92,6 +92,12 @@ parse_command_line(int argc, char* argv[]) {
     }
 }
 
+std::filesystem::path
+get_process_output_file(std::filesystem::path base) {
+    base += fmt::format(".{}", ::getpid());
+    return base;
+}
+
 } // namespace
 
 int
@@ -110,12 +116,19 @@ main(int argc, char* argv[]) {
 
             if(cfg.output_file) {
                 srv.configure_logger(logger::logger_type::file,
-                                     *cfg.output_file);
+                                     get_process_output_file(*cfg.output_file));
             }
 
             return srv.run();
         } else {
-            return cargo::worker{rank}.run();
+
+            cargo::worker w{cfg.progname, rank};
+
+            if(cfg.output_file) {
+                w.set_output_file(get_process_output_file(*cfg.output_file));
+            }
+
+            return w.run();
         }
     } catch(const std::exception& ex) {
         fmt::print(stderr,

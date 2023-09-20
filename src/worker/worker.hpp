@@ -30,13 +30,18 @@ namespace cargo {
 
 class worker {
 public:
-    worker(int rank);
+    worker(std::string name, int rank);
+
+    void
+    set_output_file(std::filesystem::path output_file);
 
     int
     run();
 
 private:
+    std::string m_name;
     int m_rank;
+    std::optional<std::filesystem::path> m_output_file;
 };
 
 } // namespace cargo

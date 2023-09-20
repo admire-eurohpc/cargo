@@ -65,7 +65,7 @@ struct fmt::formatter<cargo::transfer> : formatter<std::string_view> {
     template <typename FormatContext>
     auto
     format(const cargo::transfer& tx, FormatContext& ctx) const {
-        const auto str = fmt::format("{{id: {}}}", tx.id());
+        const auto str = fmt::format("{{tid: {}}}", tx.id());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

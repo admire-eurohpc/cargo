@@ -55,7 +55,13 @@ make_communicator(const mpi::communicator& comm, const mpi::group& group,
 
 namespace cargo {
 
-worker::worker(int rank) : m_rank(rank) {}
+worker::worker(std::string name, int rank)
+    : m_name(std::move(name)), m_rank(rank) {}
+
+void
+worker::set_output_file(std::filesystem::path output_file) {
+    m_output_file = std::move(output_file);
+}
 
 int
 worker::run() {
@@ -69,12 +75,19 @@ worker::run() {
                                                       ranks_to_exclude.end()),
                                 0);
 
-    LOGGER_INIT(fmt::format("worker_{:03}", world.rank()),
-                logger::console_color);
+    const logger::logger_config cfg{
+            fmt::format("{}:{:03}", m_name, world.rank()),
+            m_output_file ? logger::file : logger::console_color,
+            m_output_file};
 
-    // Initialization finished
-    LOGGER_INFO("Staging process initialized ({}:{})", world.rank(),
-                workers.rank());
+    logger::create_default_logger(cfg);
+
+    const auto greeting =
+            fmt::format("Starting staging process (pid {})", getpid());
+
+    LOGGER_INFO("{:=>{}}", "", greeting.size());
+    LOGGER_INFO(greeting);
+    LOGGER_INFO("{:=>{}}", "", greeting.size());
 
     bool done = false;
 
@@ -96,16 +109,18 @@ worker::run() {
             case tag::sequential: {
                 transfer_message m;
                 world.recv(0, msg->tag(), m);
-                LOGGER_CRITICAL("Transfer request received: {}", m);
+                LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
 
                 const auto op = operation::make_operation(
                         t, workers, m.input_path(), m.output_path());
 
                 cargo::error_code ec = (*op)();
 
-                LOGGER_EVAL(ec, INFO, ERROR, "Transfer finished: {}", ec);
-                world.send(msg->source(), static_cast<int>(tag::status),
-                           status_message{m.tid(), m.seqno(), ec});
+                const status_message st{m.tid(), m.seqno(), ec};
+
+                LOGGER_INFO("msg <= to: {} body: {{status: {}}}", msg->source(),
+                            st);
+                world.send(msg->source(), static_cast<int>(tag::status), st);
                 break;
             }
 

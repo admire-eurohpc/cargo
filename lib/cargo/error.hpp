@@ -69,31 +69,8 @@ public:
         return static_cast<uint32_t>(m_value);
     }
 
-    [[nodiscard]] constexpr std::string_view
-    name() const {
-
-        switch(m_category) {
-            case error_category::generic_error:
-                break;
-            case error_category::system_error:
-                return "CARGO_SYSTEM_ERROR";
-            case error_category::mpi_error:
-                return "CARGO_MPI_ERROR";
-            default:
-                return "CARGO_UNKNOWN_ERROR";
-        }
-
-        switch(m_value) {
-            case error_value::success:
-                return "CARGO_SUCCESS";
-            case error_value::snafu:
-                return "CARGO_SNAFU";
-            case error_value::not_implemented:
-                return "CARGO_NOT_IMPLEMENTED";
-            default:
-                return "CARGO_UNKNOWN_ERROR";
-        }
-    }
+    [[nodiscard]] std::string_view
+    name() const;
 
     [[nodiscard]] std::string
     message() const;

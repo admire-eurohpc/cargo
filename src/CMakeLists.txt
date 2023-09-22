@@ -47,8 +47,8 @@ target_sources(
           worker/worker.hpp
           env.hpp
           mpioxx.hpp
-          request.cpp
-          request.hpp
+          parallel_request.cpp
+          parallel_request.hpp
           request_manager.cpp
           request_manager.hpp
           shared_mutex.hpp

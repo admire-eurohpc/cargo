@@ -23,20 +23,26 @@
  *****************************************************************************/
 
 #include "cargo.hpp"
-#include "request.hpp"
+#include "parallel_request.hpp"
 
 namespace cargo {
 
-request::request(std::uint64_t tid, std::size_t nworkers)
-    : m_tid(tid), m_nworkers(nworkers) {}
+parallel_request::parallel_request(std::uint64_t tid, std::size_t nfiles,
+                                   std::size_t nworkers)
+    : m_tid(tid), m_nfiles(nfiles), m_nworkers(nworkers) {}
 
 [[nodiscard]] std::uint64_t
-request::tid() const {
+parallel_request::tid() const {
     return m_tid;
 }
 
 [[nodiscard]] std::size_t
-request::nworkers() const {
+parallel_request::nfiles() const {
+    return m_nfiles;
+}
+
+[[nodiscard]] std::size_t
+parallel_request::nworkers() const {
     return m_nworkers;
 }
 

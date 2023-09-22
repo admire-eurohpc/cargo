@@ -27,7 +27,7 @@
 
 #include <tl/expected.hpp>
 #include <atomic>
-#include "request.hpp"
+#include "parallel_request.hpp"
 #include "shared_mutex.hpp"
 
 namespace cargo {
@@ -55,7 +55,7 @@ class request_manager {
     using file_status = std::vector<part_status>;
 
 public:
-    tl::expected<request, error_code>
+    tl::expected<parallel_request, error_code>
     create(std::size_t nfiles, std::size_t nworkers);
 
     tl::expected<void, error_code>

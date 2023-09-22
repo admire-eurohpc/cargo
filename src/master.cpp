@@ -36,7 +36,7 @@
 #include "net/request.hpp"
 #include "proto/rpc/response.hpp"
 #include "proto/mpi/message.hpp"
-#include "request.hpp"
+#include "parallel_request.hpp"
 
 using namespace std::literals;
 namespace mpi = boost::mpi;

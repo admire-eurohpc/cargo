@@ -22,8 +22,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef CARGO_REQUEST_HPP
-#define CARGO_REQUEST_HPP
+#ifndef CARGO_PARALLEL_REQUEST_HPP
+#define CARGO_PARALLEL_REQUEST_HPP
 
 #include <cstdint>
 #include <vector>
@@ -32,13 +32,17 @@ namespace cargo {
 
 class dataset;
 
-class request {
+class parallel_request {
 
 public:
-    request(std::uint64_t id, std::size_t nworkers);
+    parallel_request(std::uint64_t id, std::size_t nfiles,
+                     std::size_t nworkers);
 
     [[nodiscard]] std::uint64_t
     tid() const;
+
+    [[nodiscard]] std::size_t
+    nfiles() const;
 
     [[nodiscard]] std::size_t
     nworkers() const;
@@ -46,6 +50,8 @@ public:
 private:
     /** Unique identifier for the request */
     std::uint64_t m_tid;
+    /** Number of files to be processed by the request */
+    std::size_t m_nfiles;
     /** Number of workers to be used for the request */
     std::size_t m_nworkers;
 };
@@ -55,4 +61,4 @@ enum class request_status { pending, running, completed, failed };
 
 } // namespace cargo
 
-#endif // CARGO_REQUEST_HPP
+#endif // CARGO_PARALLEL_REQUEST_HPP

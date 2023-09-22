@@ -24,7 +24,7 @@
 
 #include "cargo.hpp"
 #include "cargo/error.hpp"
-#include "request.hpp"
+#include "parallel_request.hpp"
 #include "request_manager.hpp"
 
 #include <utility>
@@ -34,7 +34,7 @@ namespace {} // namespace
 
 namespace cargo {
 
-tl::expected<request, error_code>
+tl::expected<parallel_request, error_code>
 request_manager::create(std::size_t nfiles, std::size_t nworkers) {
 
     std::uint64_t tid = current_tid++;
@@ -53,7 +53,7 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
         }
     }
 
-    return request{tid, nworkers};
+    return parallel_request{tid, nfiles, nworkers};
 }
 
 tl::expected<void, error_code>

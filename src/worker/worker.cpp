@@ -124,6 +124,13 @@ worker::run() {
                 break;
             }
 
+            case tag::shutdown:
+                LOGGER_INFO("msg => from: {} body: {{shutdown}}",
+                            msg->source());
+                world.recv(msg->source(), msg->tag());
+                done = true;
+                break;
+
             default:
                 LOGGER_WARN("[{}] Unexpected message tag: {}", msg->source(),
                             msg->tag());

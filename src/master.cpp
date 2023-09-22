@@ -135,6 +135,12 @@ master_server::mpi_listener_ult() {
                 break;
         }
     }
+
+    // shutting down, notify all workers
+    for(int rank = 1; rank < world.size(); ++rank) {
+        LOGGER_INFO("msg <= to: {} body: {{shutdown}}", rank);
+        world.send(static_cast<int>(rank), static_cast<int>(tag::shutdown));
+    }
 }
 
 #define RPC_NAME() ("ADM_"s + __FUNCTION__)

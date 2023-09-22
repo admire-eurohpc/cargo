@@ -33,7 +33,7 @@
 
 namespace cargo {
 
-enum class tag : int { pread, pwrite, sequential, status };
+enum class tag : int { pread, pwrite, sequential, status, shutdown };
 
 class transfer_message {
 
@@ -127,6 +127,21 @@ private:
     cargo::error_code m_error_code{};
 };
 
+class shutdown_message {
+
+    friend class boost::serialization::access;
+
+public:
+    shutdown_message() = default;
+
+    template <typename Archive>
+    void
+    serialize(Archive& ar, const unsigned int version) {
+        (void) ar;
+        (void) version;
+    }
+};
+
 } // namespace cargo
 
 template <>
@@ -151,6 +166,17 @@ struct fmt::formatter<cargo::status_message> : formatter<std::string_view> {
         const auto str = fmt::format("{{tid: {}, seqno: {}, error_code: {}}}",
                                      s.tid(), s.seqno(), s.error_code());
         return formatter<std::string_view>::format(str, ctx);
+    }
+};
+
+template <>
+struct fmt::formatter<cargo::shutdown_message> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::shutdown_message& s, FormatContext& ctx) const {
+        (void) s;
+        return formatter<std::string_view>::format("{{shutdown}}", ctx);
     }
 };
 

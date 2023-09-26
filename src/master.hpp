@@ -52,6 +52,9 @@ private:
                       const std::vector<cargo::dataset>& sources,
                       const std::vector<cargo::dataset>& targets);
 
+    void
+    transfer_status(const network::request& req, std::uint64_t tid);
+
 private:
     // Dedicated execution stream for the MPI listener ULT
     thallium::managed<thallium::xstream> m_mpi_listener_ess;

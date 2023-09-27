@@ -277,6 +277,10 @@ error_code::name() const {
             return "CARGO_SNAFU";
         case error_value::not_implemented:
             return "CARGO_NOT_IMPLEMENTED";
+        case error_value::no_such_transfer:
+            return "CARGO_NO_SUCH_TRANSFER";
+        case error_value::transfer_in_progress:
+            return "CARGO_TRANSFER_IN_PROGRESS";
         default:
             return "CARGO_UNKNOWN_ERROR";
     }
@@ -294,6 +298,10 @@ error_code::message() const {
                     return "snafu";
                 case error_value::not_implemented:
                     return "not implemented";
+                case error_value::no_such_transfer:
+                    return "no such transfer";
+                case error_value::transfer_in_progress:
+                    return "transfer in progress";
                 default:
                     return "unknown error";
             }

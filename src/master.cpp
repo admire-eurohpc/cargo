@@ -142,7 +142,7 @@ master_server::mpi_listener_ult() {
     }
 }
 
-#define RPC_NAME() ("ADM_"s + __FUNCTION__)
+#define RPC_NAME() (__FUNCTION__)
 
 void
 master_server::ping(const network::request& req) {

@@ -44,6 +44,7 @@ target_link_libraries(cargo PRIVATE
         MPI::MPI_CXX
         Boost::serialization
         Boost::mpi
+        net::rpc_client
 )
 
 ## Install library + targets ###################################################

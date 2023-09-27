@@ -41,13 +41,17 @@ class error_code {
     enum class error_value : std::uint32_t {
         success = 0,
         snafu = 1,
-        not_implemented = 2
+        not_implemented = 2,
+        no_such_transfer = 3,
+        transfer_in_progress = 4,
     };
 
 public:
     static const error_code success;
     static const error_code snafu;
     static const error_code not_implemented;
+    static const error_code no_such_transfer;
+    static const error_code transfer_in_progress;
 
     constexpr error_code() : error_code(error_value::success) {}
     constexpr explicit error_code(error_value v)
@@ -91,6 +95,10 @@ private:
 constexpr error_code error_code::success{error_value::success};
 constexpr error_code error_code::snafu{error_value::snafu};
 constexpr error_code error_code::not_implemented{error_value::not_implemented};
+constexpr error_code error_code::no_such_transfer{
+        error_value::no_such_transfer};
+constexpr error_code error_code::transfer_in_progress{
+        error_value::transfer_in_progress};
 
 static constexpr cargo::error_code
 make_system_error(std::uint32_t ec) {

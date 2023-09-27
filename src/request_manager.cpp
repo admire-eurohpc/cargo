@@ -69,7 +69,7 @@ request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
-    return error_code::snafu;
+    return error_code::no_such_transfer;
 }
 
 tl::expected<request_status, error_code>
@@ -95,7 +95,8 @@ request_manager::lookup(std::uint64_t tid) {
         return request_status{transfer_state::completed};
     }
 
-    return tl::make_unexpected(error_code::snafu);
+    LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
+    return tl::make_unexpected(error_code::no_such_transfer);
 }
 
 error_code
@@ -109,7 +110,7 @@ request_manager::remove(std::uint64_t tid) {
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
-    return error_code::snafu;
+    return error_code::no_such_transfer;
 }
 
 } // namespace cargo

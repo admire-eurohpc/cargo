@@ -124,9 +124,7 @@ master_server::mpi_listener_ult() {
                             msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
-                                         m.error_code()
-                                                 ? part_status::failed
-                                                 : part_status::completed);
+                                         m.state(), m.error_code());
                 break;
             }
 
@@ -211,7 +209,10 @@ master_server::transfer_status(const network::request& req, std::uint64_t tid) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
-    using proto::response_with_value;
+    using proto::status_response;
+
+    using response_type =
+            status_response<cargo::transfer_state, cargo::error_code>;
 
     mpi::communicator world;
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
@@ -224,11 +225,12 @@ master_server::transfer_status(const network::request& req, std::uint64_t tid) {
                 LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
                 req.respond(generic_response{rpc.id(), ec});
             })
-            .map([&](auto&& s) {
+            .map([&](auto&& rs) {
                 LOGGER_INFO("rpc {:<} body: {{retval: {}, status: {}}}", rpc,
-                            error_code::success, s);
+                            error_code::success, rs);
                 req.respond(
-                        response_with_value{rpc.id(), error_code::success, s});
+                        response_type{rpc.id(), error_code::success,
+                                      std::make_pair(rs.state(), rs.error())});
             });
 }
 

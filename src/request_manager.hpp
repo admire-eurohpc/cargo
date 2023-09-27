@@ -58,14 +58,14 @@ public:
     tl::expected<parallel_request, error_code>
     create(std::size_t nfiles, std::size_t nworkers);
 
-    tl::expected<void, error_code>
+    error_code
     update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
-           part_status status);
+           transfer_state s, std::optional<error_code> ec = std::nullopt);
 
     tl::expected<request_status, error_code>
     lookup(std::uint64_t tid);
 
-    tl::expected<void, error_code>
+    error_code
     remove(std::uint64_t tid);
 
 private:

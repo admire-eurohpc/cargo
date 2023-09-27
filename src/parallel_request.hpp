@@ -27,6 +27,8 @@
 
 #include <cstdint>
 #include <vector>
+#include <optional>
+#include <fmt/format.h>
 
 namespace cargo {
 
@@ -56,9 +58,73 @@ private:
     std::size_t m_nworkers;
 };
 
-enum class part_status { pending, running, completed, failed };
-enum class request_status { pending, running, completed, failed };
+/**
+ * The status of a single file part.
+ */
+class part_status {
+public:
+    part_status() = default;
+
+    [[nodiscard]] transfer_state
+    state() const;
+
+    [[nodiscard]] std::optional<error_code>
+    error() const;
+
+    void
+    update(transfer_state s, std::optional<error_code> ec) noexcept;
+
+private:
+    transfer_state m_state{transfer_state::pending};
+    std::optional<error_code> m_error_code{};
+};
+
+class request_status {
+public:
+    request_status() = default;
+    explicit request_status(transfer_state s,
+                            std::optional<error_code> ec = {});
+    explicit request_status(part_status s);
+
+    [[nodiscard]] transfer_state
+    state() const;
+
+    [[nodiscard]] std::optional<error_code>
+    error() const;
+
+private:
+    transfer_state m_state{transfer_state::pending};
+    std::optional<error_code> m_error_code{};
+};
 
 } // namespace cargo
+
+template <>
+struct fmt::formatter<cargo::request_status> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::request_status& s, FormatContext& ctx) const {
+
+        const auto state_name = [](auto&& s) {
+            switch(s.state()) {
+                case cargo::transfer_state::pending:
+                    return "pending";
+                case cargo::transfer_state::running:
+                    return "running";
+                case cargo::transfer_state::completed:
+                    return "completed";
+                case cargo::transfer_state::failed:
+                    return "failed";
+                default:
+                    return "unknown";
+            }
+        };
+
+        const auto str = fmt::format("{{state: {}, error_code: {}}}",
+                                     state_name(s), s.error());
+        return formatter<std::string_view>::format(str, ctx);
+    }
+};
 
 #endif // CARGO_PARALLEL_REQUEST_HPP

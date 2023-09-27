@@ -46,4 +46,36 @@ parallel_request::nworkers() const {
     return m_nworkers;
 }
 
+request_status::request_status(part_status s)
+    : m_state(s.state()), m_error_code(s.error()) {}
+
+request_status::request_status(transfer_state s, std::optional<error_code> ec)
+    : m_state(s), m_error_code(ec) {}
+
+transfer_state
+request_status::state() const {
+    return m_state;
+}
+
+std::optional<error_code>
+request_status::error() const {
+    return m_error_code;
+}
+
+transfer_state
+part_status::state() const {
+    return m_state;
+}
+
+std::optional<error_code>
+part_status::error() const {
+    return m_error_code;
+}
+
+void
+part_status::update(transfer_state s, std::optional<error_code> ec) noexcept {
+    m_state = s;
+    m_error_code = ec;
+}
+
 } // namespace cargo

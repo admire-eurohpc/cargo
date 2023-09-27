@@ -103,6 +103,11 @@ private:
 template <typename Error>
 using response_with_id = response_with_value<std::uint64_t, Error>;
 
+
+template <typename Status, typename Error>
+using status_response =
+        response_with_value<std::pair<Status, std::optional<Error>>, Error>;
+
 } // namespace cargo::proto
 
 #endif // CARGO_PROTO_RPC_RESPONSE_HPP

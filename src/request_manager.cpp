@@ -43,9 +43,8 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
     if(const auto it = m_requests.find(tid); it == m_requests.end()) {
 
         const auto& [it_req, inserted] = m_requests.emplace(
-                tid,
-                std::vector<file_status>{nfiles,
-                                         {nworkers, part_status::pending}});
+                tid, std::vector<file_status>{
+                             nfiles, std::vector<part_status>{nworkers}});
 
         if(!inserted) {
             LOGGER_ERROR("{}: Emplace failed", __FUNCTION__);
@@ -56,21 +55,21 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
     return parallel_request{tid, nfiles, nworkers};
 }
 
-tl::expected<void, error_code>
+error_code
 request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
-                        part_status status) {
+                        transfer_state s, std::optional<error_code> ec) {
 
     abt::unique_lock lock(m_mutex);
 
     if(const auto it = m_requests.find(tid); it != m_requests.end()) {
         assert(seqno < it->second.size());
         assert(wid < it->second[seqno].size());
-        it->second[seqno][wid] = status;
-        return {};
+        it->second[seqno][wid].update(s, ec);
+        return error_code::success;
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
-    return tl::make_unexpected(error_code::snafu);
+    return error_code::snafu;
 }
 
 tl::expected<request_status, error_code>
@@ -84,38 +83,33 @@ request_manager::lookup(std::uint64_t tid) {
 
         for(const auto& fs : file_statuses) {
             for(const auto& ps : fs) {
-                if(ps == part_status::running) {
-                    return request_status::running;
+
+                if(ps.state() == transfer_state::completed) {
+                    continue;
                 }
 
-                if(ps == part_status::pending) {
-                    return request_status::pending;
-                }
-
-                if(ps == part_status::failed) {
-                    return request_status::failed;
-                }
+                return request_status{ps};
             }
         }
 
-        return request_status::completed;
+        return request_status{transfer_state::completed};
     }
 
     return tl::make_unexpected(error_code::snafu);
 }
 
-tl::expected<void, error_code>
+error_code
 request_manager::remove(std::uint64_t tid) {
 
     abt::unique_lock lock(m_mutex);
 
     if(const auto it = m_requests.find(tid); it != m_requests.end()) {
         m_requests.erase(it);
-        return {};
+        return error_code::success;
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
-    return tl::make_unexpected(error_code::snafu);
+    return error_code::snafu;
 }
 
 } // namespace cargo

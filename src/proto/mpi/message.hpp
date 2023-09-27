@@ -29,7 +29,9 @@
 #include <filesystem>
 #include <boost/archive/binary_oarchive.hpp>
 #include <utility>
-#include "cargo/error.hpp"
+#include <optional>
+#include "cargo.hpp"
+#include "boost_serialization_std_optional.hpp"
 
 namespace cargo {
 
@@ -93,8 +95,10 @@ public:
     status_message() = default;
 
     status_message(std::uint64_t tid, std::uint32_t seqno,
-                   cargo::error_code error_code)
-        : m_tid(tid), m_seqno(seqno), m_error_code(error_code) {}
+                   cargo::transfer_state state,
+                   std::optional<cargo::error_code> error_code = std::nullopt)
+        : m_tid(tid), m_seqno(seqno), m_state(state), m_error_code(error_code) {
+    }
 
     [[nodiscard]] std::uint64_t
     tid() const {
@@ -106,7 +110,12 @@ public:
         return m_seqno;
     }
 
-    [[nodiscard]] cargo::error_code
+    [[nodiscard]] cargo::transfer_state
+    state() const {
+        return m_state;
+    }
+
+    [[nodiscard]] std::optional<cargo::error_code>
     error_code() const {
         return m_error_code;
     }
@@ -119,12 +128,14 @@ private:
 
         ar & m_tid;
         ar & m_seqno;
+        ar & m_state;
         ar & m_error_code;
     }
 
     std::uint64_t m_tid{};
     std::uint32_t m_seqno{};
-    cargo::error_code m_error_code{};
+    cargo::transfer_state m_state{};
+    std::optional<cargo::error_code> m_error_code{};
 };
 
 class shutdown_message {
@@ -163,8 +174,14 @@ struct fmt::formatter<cargo::status_message> : formatter<std::string_view> {
     template <typename FormatContext>
     auto
     format(const cargo::status_message& s, FormatContext& ctx) const {
-        const auto str = fmt::format("{{tid: {}, seqno: {}, error_code: {}}}",
-                                     s.tid(), s.seqno(), s.error_code());
+        const auto str =
+                s.error_code()
+                        ? fmt::format("{{tid: {}, seqno: {}, state: {}, "
+                                      "error_code: {}}}",
+                                      s.tid(), s.seqno(), s.state(),
+                                      *s.error_code())
+                        : fmt::format("{{tid: {}, seqno: {}, state: {}}}",
+                                      s.tid(), s.seqno(), s.state());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

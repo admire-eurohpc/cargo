@@ -54,6 +54,7 @@ target_sources(
           shared_mutex.hpp
           proto/rpc/response.hpp
           proto/mpi/message.hpp
+          boost_serialization_std_optional.hpp
 )
 
 target_include_directories(

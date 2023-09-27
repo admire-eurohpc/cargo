@@ -51,6 +51,17 @@ make_communicator(const mpi::communicator& comm, const mpi::group& group,
     return mpi::communicator{newcomm, boost::mpi::comm_take_ownership};
 }
 
+void
+update_state(int rank, std::uint64_t tid, std::uint32_t seqno,
+             cargo::transfer_state st,
+             std::optional<cargo::error_code> ec = std::nullopt) {
+
+    mpi::communicator world;
+    const cargo::status_message m{tid, seqno, st, ec};
+    LOGGER_INFO("msg <= to: {} body: {{payload: {}}}", rank, m);
+    world.send(rank, static_cast<int>(cargo::tag::status), m);
+}
+
 } // namespace
 
 namespace cargo {
@@ -114,13 +125,15 @@ worker::run() {
                 const auto op = operation::make_operation(
                         t, workers, m.input_path(), m.output_path());
 
+                update_state(msg->source(), m.tid(), m.seqno(),
+                             transfer_state::running);
+
                 cargo::error_code ec = (*op)();
 
-                const status_message st{m.tid(), m.seqno(), ec};
-
-                LOGGER_INFO("msg <= to: {} body: {{status: {}}}", msg->source(),
-                            st);
-                world.send(msg->source(), static_cast<int>(tag::status), st);
+                update_state(msg->source(), m.tid(), m.seqno(),
+                             ec ? transfer_state::failed
+                                : transfer_state::completed,
+                             ec);
                 break;
             }
 

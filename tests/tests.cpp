@@ -226,11 +226,11 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
         WHEN("Transferring datasets to a POSIX storage system") {
             const auto tx = cargo::transfer_datasets(server, sources, targets);
 
-            (void) tx;
+            // wait for the transfer to complete
+            auto s = tx.wait();
 
-            // give time for transfers to complete before removing input files
-            // FIXME: replace with proper status checking for the transfer
-            std::this_thread::sleep_for(1s);
+            REQUIRE(s.state() == cargo::transfer_state::completed);
+            REQUIRE(s.error() == cargo::error_code::success);
 
             THEN("Output datasets are identical to input datasets") {
 
@@ -286,11 +286,11 @@ SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
         WHEN("Transferring datasets to a PFS") {
             const auto tx = cargo::transfer_datasets(server, sources, targets);
 
-            (void) tx;
+            // wait for the transfer to complete
+            auto s = tx.wait();
 
-            // give time for transfers to complete before removing input files
-            // FIXME: replace with proper status checking for the transfer
-            std::this_thread::sleep_for(1s);
+            REQUIRE(s.state() == cargo::transfer_state::completed);
+            REQUIRE(s.error() == cargo::error_code::success);
 
             THEN("Output datasets are identical to input datasets") {
 

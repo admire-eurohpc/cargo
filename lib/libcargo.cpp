@@ -32,6 +32,7 @@
 #include <net/endpoint.hpp>
 #include <proto/rpc/response.hpp>
 #include <utility>
+#include <thread>
 
 using namespace std::literals;
 

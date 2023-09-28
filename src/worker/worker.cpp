@@ -22,6 +22,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
+#include <thread>
 #include <fmt/format.h>
 #include <logger/logger.hpp>
 #include <boost/mpi.hpp>

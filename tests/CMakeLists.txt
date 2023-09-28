@@ -34,7 +34,35 @@ target_link_libraries(
   tests PUBLIC Catch2::Catch2 Boost::iostreams fmt::fmt cargo posix_file
 )
 
+# prepare the environment for the Cargo daemon
+set(CARGO_TESTS_DIRECTORY "${CMAKE_BINARY_DIR}/Testing")
+file(MAKE_DIRECTORY ${CARGO_TESTS_DIRECTORY})
+
+set(TEST_DIRECTORY "${CARGO_TESTS_DIRECTORY}/cargo_server")
+file(MAKE_DIRECTORY ${TEST_DIRECTORY})
+
+set(CARGO_ADDRESS
+    ${CARGO_TRANSPORT_PROTOCOL}://${CARGO_BIND_ADDRESS}:${CARGO_BIND_PORT})
+
+add_test(NAME start_cargo
+  COMMAND
+    ${CMAKE_SOURCE_DIR}/scripts/runner.sh start /dev/null
+        ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4
+          $<TARGET_FILE:cargo_server> -l ${CARGO_ADDRESS} -o ${TEST_DIRECTORY}/cargo.log
+)
+
+set_tests_properties(start_cargo
+        PROPERTIES FIXTURES_SETUP cargo_daemon)
+
+add_test(NAME stop_cargo
+  COMMAND cargo_shutdown --server ${CARGO_ADDRESS}
+)
+
+set_tests_properties(stop_cargo
+        PROPERTIES FIXTURES_CLEANUP cargo_daemon)
+
 catch_discover_tests(
   tests EXTRA_ARGS
   "-S ${CARGO_TRANSPORT_PROTOCOL}://${CARGO_BIND_ADDRESS}:${CARGO_BIND_PORT}"
+  PROPERTIES FIXTURES_REQUIRED cargo_daemon
 )

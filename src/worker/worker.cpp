@@ -120,7 +120,7 @@ worker::run() {
                 [[fallthrough]];
             case tag::sequential: {
                 transfer_message m;
-                world.recv(0, msg->tag(), m);
+                world.recv(msg->source(), msg->tag(), m);
                 LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
 
                 const auto op = operation::make_operation(

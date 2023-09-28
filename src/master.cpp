@@ -119,8 +119,8 @@ master_server::mpi_listener_ult() {
         switch(static_cast<cargo::tag>(msg->tag())) {
             case tag::status: {
                 status_message m;
-                world.recv(mpi::any_source, msg->tag(), m);
-                LOGGER_INFO("msg => from: {} body: {{status: {}}}",
+                world.recv(msg->source(), msg->tag(), m);
+                LOGGER_INFO("msg => from: {} body: {{payload: {}}}",
                             msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,

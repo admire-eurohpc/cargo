@@ -27,7 +27,9 @@
 
 #include <iomanip>
 #include <string_view>
+#include <optional>
 #include <fmt/format.h>
+#include "cargo/error.hpp"
 
 namespace cargo {
 
@@ -64,9 +66,52 @@ struct fmt::formatter<cargo::transfer> : formatter<std::string_view> {
     template <typename FormatContext>
     auto
     format(const cargo::transfer& tx, FormatContext& ctx) const {
-        const auto str = fmt::format("{{id: {}}}", tx.id());
+        const auto str = fmt::format("{{tid: {}}}", tx.id());
         return formatter<std::string_view>::format(str, ctx);
     }
 };
+
+template <>
+struct fmt::formatter<cargo::error_code> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::error_code& ec, FormatContext& ctx) const {
+        return formatter<std::string_view>::format(ec.name(), ctx);
+    }
+};
+
+template <>
+struct fmt::formatter<cargo::transfer_state> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::transfer_state& s, FormatContext& ctx) const {
+        switch(s) {
+            case cargo::transfer_state::pending:
+                return formatter<std::string_view>::format("pending", ctx);
+            case cargo::transfer_state::running:
+                return formatter<std::string_view>::format("running", ctx);
+            case cargo::transfer_state::completed:
+                return formatter<std::string_view>::format("completed", ctx);
+            case cargo::transfer_state::failed:
+                return formatter<std::string_view>::format("failed", ctx);
+            default:
+                return formatter<std::string_view>::format("unknown", ctx);
+        }
+    }
+};
+
+template <typename T>
+struct fmt::formatter<std::optional<T>> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const std::optional<T>& v, FormatContext& ctx) const {
+        return formatter<std::string_view>::format(
+                v ? fmt::format("{}", v.value()) : "none", ctx);
+    }
+};
+
 
 #endif // CARGO_FMT_FORMATTERS_HPP

@@ -24,23 +24,26 @@
 
 #include <cargo.hpp>
 #include <fmt_formatters.hpp>
-#include <thallium.hpp>
-#include <thallium/serialization/stl/string.hpp>
-#include <thallium/serialization/stl/vector.hpp>
+#include <net/serialization.hpp>
 #include <iomanip>
 #include <logger/logger.hpp>
+#include <net/client.hpp>
+#include <net/utilities.hpp>
+#include <net/endpoint.hpp>
+#include <proto/rpc/response.hpp>
+#include <utility>
+#include <thread>
 
 using namespace std::literals;
 
 namespace cargo {
 
-struct remote_procedure {
-    static std::uint64_t
-    new_id() {
-        static std::atomic_uint64_t current_id;
-        return current_id++;
-    }
-};
+using generic_response = proto::generic_response<error_code>;
+template <typename Value>
+using response_with_value = proto::response_with_value<Value, error_code>;
+using response_with_id = proto::response_with_id<error_code>;
+
+#define RPC_NAME() (__FUNCTION__)
 
 server::server(std::string address) noexcept : m_address(std::move(address)) {
 
@@ -74,39 +77,141 @@ dataset::supports_parallel_transfer() const noexcept {
     return m_type == dataset::type::parallel;
 }
 
-transfer::transfer(transfer_id id) noexcept : m_id(id) {}
+transfer::transfer(transfer_id id, server srv) noexcept
+    : m_id(id), m_srv(std::move(srv)) {}
 
 [[nodiscard]] transfer_id
 transfer::id() const noexcept {
     return m_id;
 }
 
-cargo::transfer
+transfer_status
+transfer::status() const {
+
+    using proto::status_response;
+
+    network::client rpc_client{m_srv.protocol()};
+    const auto rpc =
+            network::rpc_info::create("transfer_status", m_srv.address());
+    using response_type = status_response<transfer_state, error_code>;
+
+    if(const auto lookup_rv = rpc_client.lookup(m_srv.address());
+       lookup_rv.has_value()) {
+        const auto& endp = lookup_rv.value();
+
+        LOGGER_INFO("rpc {:<} body: {{tid: {}}}", rpc, m_id);
+
+        if(const auto call_rv = endp.call(rpc.name(), m_id);
+           call_rv.has_value()) {
+
+            const response_type resp{call_rv.value()};
+            const auto& [s, ec] = resp.value();
+
+            LOGGER_EVAL(resp.error_code(), INFO, ERROR,
+                        "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
+                        resp.error_code(), resp.op_id());
+
+            if(resp.error_code()) {
+                throw std::runtime_error(
+                        fmt::format("rpc call failed: {}", resp.error_code()));
+            }
+
+            return transfer_status{s, ec.value_or(error_code::success)};
+        }
+    }
+
+    throw std::runtime_error("rpc lookup failed");
+}
+
+transfer_status::transfer_status(transfer_state status,
+                                 error_code error) noexcept
+    : m_state(status), m_error(error) {}
+
+transfer_state
+transfer_status::state() const noexcept {
+    return m_state;
+}
+
+bool
+transfer_status::done() const noexcept {
+    return m_state == transfer_state::completed;
+}
+
+bool
+transfer_status::failed() const noexcept {
+    return m_state == transfer_state::failed;
+}
+
+error_code
+transfer_status::error() const {
+    switch(m_state) {
+        case transfer_state::pending:
+            [[fallthrough]];
+        case transfer_state::running:
+            return error_code::transfer_in_progress;
+        default:
+            return m_error;
+    }
+}
+
+transfer
 transfer_datasets(const server& srv, const std::vector<dataset>& sources,
                   const std::vector<dataset>& targets) {
 
-    thallium::engine engine(srv.protocol(), THALLIUM_CLIENT_MODE);
-    thallium::remote_procedure transfer_datasets =
-            engine.define("transfer_datasets");
-    thallium::endpoint endp = engine.lookup(srv.address());
+    network::client rpc_client{srv.protocol()};
+    const auto rpc = network::rpc_info::create(RPC_NAME(), srv.address());
 
-    const auto rpc_id = remote_procedure::new_id();
+    if(const auto lookup_rv = rpc_client.lookup(srv.address());
+       lookup_rv.has_value()) {
+        const auto& endp = lookup_rv.value();
 
-    LOGGER_INFO("rpc id: {} name: {} from: {} => "
-                "body: {{sources: {}, targets: {}}}",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(std::string{engine.self()}), sources, targets);
+        LOGGER_INFO("rpc {:<} body: {{sources: {}, targets: {}}}", rpc, sources,
+                    targets);
 
-    cargo::error_code ec = transfer_datasets.on(endp)(sources, targets);
-    const auto tx = cargo::transfer{42};
-    const auto op_id = 42;
+        if(const auto call_rv = endp.call(rpc.name(), sources, targets);
+           call_rv.has_value()) {
 
-    LOGGER_INFO("rpc id: {} name: {} from: {} <= "
-                "body: {{retval: {}, transfer: {}}} [op_id: {}]",
-                rpc_id, std::quoted(__FUNCTION__),
-                std::quoted(std::string{endp}), ec, tx, op_id);
+            const response_with_id resp{call_rv.value()};
 
-    return tx;
+            LOGGER_EVAL(resp.error_code(), INFO, ERROR,
+                        "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
+                        resp.error_code(), resp.op_id());
+
+            if(resp.error_code()) {
+                throw std::runtime_error(
+                        fmt::format("rpc call failed: {}", resp.error_code()));
+            }
+
+            return transfer{resp.value(), srv};
+        }
+    }
+
+    throw std::runtime_error("rpc lookup failed");
+}
+
+transfer_status
+transfer::wait() const {
+    // wait for the transfer to complete
+    auto s = status();
+
+    while(!s.done() && !s.failed()) {
+        s = wait_for(150ms);
+    }
+
+    return s;
+}
+
+transfer_status
+transfer::wait_for(const std::chrono::nanoseconds& timeout) const {
+    std::this_thread::sleep_for(timeout);
+    return status();
+}
+
+transfer
+transfer_dataset(const server& srv, const dataset& source,
+                 const dataset& target) {
+    return transfer_datasets(srv, std::vector<dataset>{source},
+                             std::vector<dataset>{target});
 }
 
 } // namespace cargo

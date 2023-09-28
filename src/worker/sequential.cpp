@@ -22,22 +22,16 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
+#include <logger/logger.hpp>
+#include "sequential.hpp"
 
-#ifndef POSIX_FILE_TYPES_HPP
-#define POSIX_FILE_TYPES_HPP
 
-#include <cstddef>
+namespace cargo {
 
-namespace posix_file {
-
-using offset = std::size_t;
-using offset_distance = std::ptrdiff_t;
-
-constexpr offset_distance
-distance(offset a, offset b) {
-    return b - a;
+cargo::error_code
+seq_operation::operator()() const {
+    LOGGER_CRITICAL("{}: to be implemented", __FUNCTION__);
+    return cargo::error_code::not_implemented;
 }
 
-} // namespace posix_file
-
-#endif // POSIX_FILE_TYPES_HPP
+} // namespace cargo

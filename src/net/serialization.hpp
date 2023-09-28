@@ -34,6 +34,7 @@
 #include <thallium/serialization/proc_output_archive.hpp>
 #include <thallium/serialization/stl/string.hpp>
 #include <thallium/serialization/stl/vector.hpp>
+#include <thallium/serialization/stl/pair.hpp>
 
 // Cereal does not serialize std::filesystem::path's by default
 #include <filesystem>

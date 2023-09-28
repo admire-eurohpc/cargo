@@ -22,22 +22,30 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
+#ifndef CARGO_WORKER_MPIO_READ_HPP
+#define CARGO_WORKER_MPIO_READ_HPP
 
-#ifndef POSIX_FILE_TYPES_HPP
-#define POSIX_FILE_TYPES_HPP
+#include "ops.hpp"
 
-#include <cstddef>
+namespace mpi = boost::mpi;
 
-namespace posix_file {
+namespace cargo {
 
-using offset = std::size_t;
-using offset_distance = std::ptrdiff_t;
+class mpio_read : public operation {
 
-constexpr offset_distance
-distance(offset a, offset b) {
-    return b - a;
-}
+public:
+    mpio_read(mpi::communicator workers, std::filesystem::path input_path,
+              std::filesystem::path output_path);
 
-} // namespace posix_file
+    cargo::error_code
+    operator()() const final;
 
-#endif // POSIX_FILE_TYPES_HPP
+private:
+    mpi::communicator m_workers;
+    std::filesystem::path m_input_path;
+    std::filesystem::path m_output_path;
+};
+
+} // namespace cargo
+
+#endif // CARGO_WORKER_MPIO_READ_HPP

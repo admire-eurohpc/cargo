@@ -22,11 +22,17 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
+#ifndef CARGO_WORKER_MEMORY_HPP
+#define CARGO_WORKER_MEMORY_HPP
 
-#ifndef CARGO_WORKER_HPP
-#define CARGO_WORKER_HPP
+#include <vector>
+#include <span>
 
-void
-worker();
+namespace cargo {
 
-#endif // CARGO_WORKER_HPP
+using memory_buffer = std::vector<char>;
+using buffer_region = std::span<char>;
+
+} // namespace cargo
+
+#endif // CARGO_WORKER_MEMORY_HPP

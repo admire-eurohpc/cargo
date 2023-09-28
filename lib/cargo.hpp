@@ -28,11 +28,12 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
+#include <cargo/error.hpp>
 
 namespace cargo {
 
 using transfer_id = std::uint64_t;
-using error_code = std::int32_t;
 
 /**
  * A Cargo server
@@ -75,8 +76,8 @@ public:
     template <typename Archive>
     void
     serialize(Archive& ar) {
-        ar& m_path;
-        ar& m_type;
+        ar & m_path;
+        ar & m_type;
     }
 
 private:
@@ -86,27 +87,110 @@ private:
 
 
 /**
+ * The status of a Cargo transfer
+ */
+enum class transfer_state { pending, running, completed, failed };
+
+class transfer_status;
+
+/**
  * A transfer handler
  */
 class transfer {
 
-public:
-    transfer() noexcept = default;
-    explicit transfer(transfer_id id) noexcept;
+    friend transfer
+    transfer_datasets(const server& srv, const std::vector<dataset>& sources,
+                      const std::vector<dataset>& targets);
+
+    explicit transfer(transfer_id id, server srv) noexcept;
 
     [[nodiscard]] transfer_id
     id() const noexcept;
 
-    template <typename Archive>
-    void
-    serialize(Archive& ar) {
-        ar& m_id;
-    }
+public:
+    /**
+     * Get the current status of the associated transfer.
+     *
+     * @return A `transfer_status` object containing detailed information about
+     * the transfer status.
+     */
+    [[nodiscard]] transfer_status
+    status() const;
+
+    /**
+     * Wait for the associated transfer to complete.
+     *
+     * @return A `transfer_status` object containing detailed information about
+     * the transfer status.
+     */
+    [[nodiscard]] transfer_status
+    wait() const;
+
+    /**
+     * Wait for the associated transfer to complete or for a timeout to occur.
+     * @param timeout The maximum amount of time to wait for the transfer to
+     * complete.
+     * @return A `transfer_status` object containing detailed information about
+     * the transfer status.
+     */
+    [[nodiscard]] transfer_status
+    wait_for(const std::chrono::nanoseconds& timeout) const;
 
 private:
     transfer_id m_id;
+    server m_srv;
 };
 
+/**
+ * Detailed status information for a transfer
+ */
+class transfer_status {
+
+    friend transfer_status
+    transfer::status() const;
+
+    transfer_status(transfer_state status, error_code error) noexcept;
+
+public:
+    /**
+     * Get the current status of the associated transfer.
+     *
+     * @return A `transfer_state` enum value representing the current status.
+     */
+    [[nodiscard]] transfer_state
+    state() const noexcept;
+
+    /**
+     * Check whether the transfer has completed.
+     *
+     * @return true if the transfer has completed, false otherwise.
+     */
+    [[nodiscard]] bool
+    done() const noexcept;
+
+    /**
+     * Check whether the transfer has failed.
+     *
+     * @return true if the transfer has failed, false otherwise.
+     */
+    [[nodiscard]] bool
+    failed() const noexcept;
+
+    /**
+     * Retrieve the error code associated with a failed transfer.
+     *
+     * @return An error code describing a transfer failure or
+     * `error_code::success` if the transfer succeeded.
+     * If the transfer has not yet completed,
+     * `error_code::transfer_in_progress` is returned.
+     */
+    [[nodiscard]] error_code
+    error() const;
+
+private:
+    transfer_state m_state;
+    error_code m_error;
+};
 
 /**
  * Request the transfer of a dataset collection.
@@ -116,9 +200,23 @@ private:
  * @param targets The output datasets that should be generated.
  * @return A transfer
  */
-cargo::transfer
+transfer
 transfer_datasets(const server& srv, const std::vector<dataset>& sources,
                   const std::vector<dataset>& targets);
+
+/**
+ * Request the transfer of a single dataset.
+ * This function is a convenience wrapper around the previous one.
+ * It takes a single source and a single target dataset.
+ *
+ * @param srv The Cargo server that should execute the transfer.
+ * @param source The input dataset that should be transferred.
+ * @param target The output dataset that should be generated.
+ * @return A transfer
+ */
+transfer
+transfer_dataset(const server& srv, const dataset& source,
+                 const dataset& target);
 
 } // namespace cargo
 

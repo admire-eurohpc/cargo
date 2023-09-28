@@ -22,22 +22,34 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
+#ifndef CARGO_WORKER_OPS_HPP
+#define CARGO_WORKER_OPS_HPP
 
-#ifndef POSIX_FILE_TYPES_HPP
-#define POSIX_FILE_TYPES_HPP
+#include <memory>
+#include <boost/mpi.hpp>
+#include <filesystem>
+#include "proto/mpi/message.hpp"
+#include "cargo.hpp"
 
-#include <cstddef>
+namespace cargo {
 
-namespace posix_file {
+/**
+ * Interface for transfer operations
+ */
+class operation {
 
-using offset = std::size_t;
-using offset_distance = std::ptrdiff_t;
+public:
+    static std::unique_ptr<operation>
+    make_operation(cargo::tag t, boost::mpi::communicator workers,
+                   std::filesystem::path input_path,
+                   std::filesystem::path output_path);
 
-constexpr offset_distance
-distance(offset a, offset b) {
-    return b - a;
-}
+    virtual ~operation() = default;
 
-} // namespace posix_file
+    virtual cargo::error_code
+    operator()() const = 0;
+};
 
-#endif // POSIX_FILE_TYPES_HPP
+} // namespace cargo
+
+#endif // CARGO_WORKER_OPS_HPP

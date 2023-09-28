@@ -23,21 +23,27 @@
  *****************************************************************************/
 
 
-#ifndef POSIX_FILE_TYPES_HPP
-#define POSIX_FILE_TYPES_HPP
+#ifndef CARGO_WORKER_HPP
+#define CARGO_WORKER_HPP
 
-#include <cstddef>
+namespace cargo {
 
-namespace posix_file {
+class worker {
+public:
+    worker(std::string name, int rank);
 
-using offset = std::size_t;
-using offset_distance = std::ptrdiff_t;
+    void
+    set_output_file(std::filesystem::path output_file);
 
-constexpr offset_distance
-distance(offset a, offset b) {
-    return b - a;
-}
+    int
+    run();
 
-} // namespace posix_file
+private:
+    std::string m_name;
+    int m_rank;
+    std::optional<std::filesystem::path> m_output_file;
+};
 
-#endif // POSIX_FILE_TYPES_HPP
+} // namespace cargo
+
+#endif // CARGO_WORKER_HPP

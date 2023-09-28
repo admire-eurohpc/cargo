@@ -34,11 +34,27 @@ target_sources(
   PRIVATE cargo.cpp
           master.cpp
           master.hpp
-          worker.cpp
-          worker.hpp
+          worker/memory.hpp
+          worker/mpio_read.cpp
+          worker/mpio_read.hpp
+          worker/mpio_write.hpp
+          worker/mpio_write.cpp
+          worker/ops.cpp
+          worker/ops.hpp
+          worker/sequential.cpp
+          worker/sequential.hpp
+          worker/worker.cpp
+          worker/worker.hpp
           env.hpp
           mpioxx.hpp
-          message.hpp
+          parallel_request.cpp
+          parallel_request.hpp
+          request_manager.cpp
+          request_manager.hpp
+          shared_mutex.hpp
+          proto/rpc/response.hpp
+          proto/mpi/message.hpp
+          boost_serialization_std_optional.hpp
 )
 
 target_include_directories(

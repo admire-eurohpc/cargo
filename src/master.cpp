@@ -30,57 +30,122 @@
 #include <fmt_formatters.hpp>
 #include <boost/mpi.hpp>
 #include <utility>
-#include "message.hpp"
+#include <boost/mpi/communicator.hpp>
 #include "master.hpp"
 #include "net/utilities.hpp"
 #include "net/request.hpp"
 #include "proto/rpc/response.hpp"
+#include "proto/mpi/message.hpp"
+#include "parallel_request.hpp"
 
 using namespace std::literals;
+namespace mpi = boost::mpi;
 
 namespace {
 
-cargo::transfer_request_message
-create_request_message(const cargo::dataset& input,
-                       const cargo::dataset& output) {
-
-    cargo::transfer_type tx_type;
+std::tuple<int, cargo::transfer_message>
+make_message(std::uint64_t tid, std::uint32_t seqno,
+             const cargo::dataset& input, const cargo::dataset& output) {
 
     if(input.supports_parallel_transfer()) {
-        tx_type = cargo::parallel_read;
-    } else if(output.supports_parallel_transfer()) {
-        tx_type = cargo::parallel_write;
-    } else {
-        tx_type = cargo::sequential;
+        return std::make_tuple(static_cast<int>(cargo::tag::pread),
+                               cargo::transfer_message{tid, seqno, input.path(),
+                                                       output.path()});
     }
 
-    return cargo::transfer_request_message{input.path(), output.path(),
-                                           tx_type};
+    if(output.supports_parallel_transfer()) {
+        return std::make_tuple(static_cast<int>(cargo::tag::pwrite),
+                               cargo::transfer_message{tid, seqno, input.path(),
+                                                       output.path()});
+    }
+
+    return std::make_tuple(
+            static_cast<int>(cargo::tag::sequential),
+            cargo::transfer_message{tid, seqno, input.path(), output.path()});
 }
 
 } // namespace
 
 using namespace std::literals;
 
+namespace cargo {
+
 master_server::master_server(std::string name, std::string address,
                              bool daemonize, std::filesystem::path rundir,
                              std::optional<std::filesystem::path> pidfile)
     : server(std::move(name), std::move(address), daemonize, std::move(rundir),
              std::move(pidfile)),
-      provider(m_network_engine, 0) {
+      provider(m_network_engine, 0),
+      m_mpi_listener_ess(thallium::xstream::create()),
+      m_mpi_listener_ult(m_mpi_listener_ess->make_thread(
+              [this]() { mpi_listener_ult(); })) {
 
 #define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
     provider::define(EXPAND(ping));
     provider::define(EXPAND(transfer_datasets));
+    provider::define(EXPAND(transfer_status));
 
 #undef EXPAND
+
+    // ESs and ULTs need to be joined before the network engine is
+    // actually finalized, and ~master_server() is too late for that.
+    // The push_prefinalize_callback() and push_finalize_callback() functions
+    // serve this purpose. The former is called before Mercury is finalized,
+    // while the latter is called in between that and Argobots finalization.
+    m_network_engine.push_finalize_callback([this]() {
+        m_mpi_listener_ult->join();
+        m_mpi_listener_ult = thallium::managed<thallium::thread>{};
+        m_mpi_listener_ess->join();
+        m_mpi_listener_ess = thallium::managed<thallium::xstream>{};
+    });
 }
 
-#define RPC_NAME() ("ADM_"s + __FUNCTION__)
+master_server::~master_server() {}
+
+void
+master_server::mpi_listener_ult() {
+
+    mpi::communicator world;
+
+    while(!m_shutting_down) {
+
+        auto msg = world.iprobe();
+
+        if(!msg) {
+            thallium::thread::self().sleep(m_network_engine, 150);
+            continue;
+        }
+
+        switch(static_cast<cargo::tag>(msg->tag())) {
+            case tag::status: {
+                status_message m;
+                world.recv(msg->source(), msg->tag(), m);
+                LOGGER_INFO("msg => from: {} body: {{payload: {}}}",
+                            msg->source(), m);
+
+                m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
+                                         m.state(), m.error_code());
+                break;
+            }
+
+            default:
+                LOGGER_WARN("msg => from: {} body: {{Unexpected tag: {}}}",
+                            msg->source(), msg->tag());
+                break;
+        }
+    }
+
+    // shutting down, notify all workers
+    for(int rank = 1; rank < world.size(); ++rank) {
+        LOGGER_INFO("msg <= to: {} body: {{shutdown}}", rank);
+        world.send(static_cast<int>(rank), static_cast<int>(tag::shutdown));
+    }
+}
+
+#define RPC_NAME() (__FUNCTION__)
 
 void
 master_server::ping(const network::request& req) {
-
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
@@ -89,7 +154,7 @@ master_server::ping(const network::request& req) {
 
     LOGGER_INFO("rpc {:>} body: {{}}", rpc);
 
-    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
+    const auto resp = generic_response{rpc.id(), error_code::success};
 
     LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
 
@@ -98,40 +163,75 @@ master_server::ping(const network::request& req) {
 
 void
 master_server::transfer_datasets(const network::request& req,
-                                 const std::vector<cargo::dataset>& sources,
-                                 const std::vector<cargo::dataset>& targets) {
-
+                                 const std::vector<dataset>& sources,
+                                 const std::vector<dataset>& targets) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
+    using proto::response_with_id;
 
+    mpi::communicator world;
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
 
     LOGGER_INFO("rpc {:>} body: {{sources: {}, targets: {}}}", rpc, sources,
                 targets);
 
-    const auto resp = generic_response{rpc.id(), cargo::error_code{0}};
+    m_request_manager.create(sources.size(), world.size() - 1)
+            .or_else([&](auto&& ec) {
+                LOGGER_ERROR("Failed to create request: {}", ec);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
+                req.respond(generic_response{rpc.id(), ec});
+            })
+            .map([&](auto&& r) {
+                assert(sources.size() == targets.size());
 
-    assert(sources.size() == targets.size());
+                for(auto i = 0u; i < sources.size(); ++i) {
+                    const auto& s = sources[i];
+                    const auto& d = targets[i];
 
-    boost::mpi::communicator world;
-    for(auto i = 0u; i < sources.size(); ++i) {
+                    for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
+                        const auto [t, m] = make_message(r.tid(), i, s, d);
+                        LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+                        world.send(static_cast<int>(rank), t, m);
+                    }
+                }
 
-        const auto& input_path = sources[i].path();
-        const auto& output_path = targets[i].path();
-
-        const auto m = ::create_request_message(sources[i], targets[i]);
-
-        for(int rank = 1; rank < world.size(); ++rank) {
-            world.send(rank, static_cast<int>(cargo::message_tags::transfer),
-                       m);
-        }
-    }
-
-    cargo::transfer tx{42};
-
-    LOGGER_INFO("rpc {:<} body: {{retval: {}, transfer: {}}}", rpc,
-                resp.error_code(), tx);
-
-    req.respond(resp);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}, tid: {}}}", rpc,
+                            error_code::success, r.tid());
+                req.respond(response_with_id{rpc.id(), error_code::success,
+                                             r.tid()});
+            });
 }
+
+void
+master_server::transfer_status(const network::request& req, std::uint64_t tid) {
+
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+    using proto::status_response;
+
+    using response_type =
+            status_response<cargo::transfer_state, cargo::error_code>;
+
+    mpi::communicator world;
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    LOGGER_INFO("rpc {:>} body: {{tid: {}}}", rpc, tid);
+
+    m_request_manager.lookup(tid)
+            .or_else([&](auto&& ec) {
+                LOGGER_ERROR("Failed to lookup request: {}", ec);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
+                req.respond(generic_response{rpc.id(), ec});
+            })
+            .map([&](auto&& rs) {
+                LOGGER_INFO("rpc {:<} body: {{retval: {}, status: {}}}", rpc,
+                            error_code::success, rs);
+                req.respond(
+                        response_type{rpc.id(), error_code::success,
+                                      std::make_pair(rs.state(), rs.error())});
+            });
+}
+
+} // namespace cargo

@@ -120,6 +120,35 @@ public:
     }
 };
 
+class io_error : public std::exception {
+
+public:
+    io_error(std::string_view fun, int ec) : m_fun(fun), m_error_code(ec) {}
+
+    [[nodiscard]] std::uint32_t
+    error_code() const noexcept {
+        return m_error_code;
+    }
+
+    [[nodiscard]] const char*
+    what() const noexcept override {
+        m_message.assign(
+                std::make_error_code(static_cast<std::errc>(m_error_code))
+                        .message());
+        return m_message.c_str();
+    }
+
+    [[nodiscard]] std::string_view
+    where() const noexcept {
+        return m_fun;
+    }
+
+private:
+    mutable std::string m_message;
+    std::string_view m_fun;
+    int m_error_code;
+};
+
 class file {
 
 public:
@@ -149,34 +178,29 @@ public:
         return std::filesystem::remove(m_path);
     }
 
-    tl::expected<void, std::error_code>
-    fallocate(int mode, offset offset, std::size_t len) const noexcept {
+    void
+    fallocate(int mode, offset offset, std::size_t len) const {
 
         if(!m_handle) {
-            return tl::make_unexpected(
-                    std::error_code{EBADF, std::generic_category()});
+            throw io_error("posix_file::file::fallocate", EBADF);
         }
 
         int ret = ::fallocate(m_handle.native(), mode, offset,
                               static_cast<off_t>(len));
 
         if(ret == -1) {
-            return tl::make_unexpected(
-                    std::error_code{errno, std::generic_category()});
+            throw io_error("posix_file::file::fallocate", errno);
         }
-
-        return {};
     }
 
     template <typename MemoryBuffer>
-    tl::expected<std::size_t, std::error_code>
-    pread(MemoryBuffer&& buf, offset offset, std::size_t size) const noexcept {
+    std::size_t
+    pread(MemoryBuffer&& buf, offset offset, std::size_t size) const {
 
         assert(buf.size() >= size);
 
         if(!m_handle) {
-            return tl::make_unexpected(
-                    std::error_code{EBADF, std::generic_category()});
+            throw io_error("posix_file::file::pread", EBADF);
         }
 
         std::size_t bytes_read = 0;
@@ -199,8 +223,7 @@ public:
                 }
 
                 // Some other error condition, report
-                return tl::make_unexpected(
-                        std::error_code{errno, std::generic_category()});
+                throw io_error("posix_file::file::pread", errno);
             }
 
             bytes_read += n;
@@ -211,14 +234,13 @@ public:
     }
 
     template <typename MemoryBuffer>
-    tl::expected<std::size_t, std::error_code>
-    pwrite(MemoryBuffer&& buf, offset offset, std::size_t size) const noexcept {
+    std::size_t
+    pwrite(MemoryBuffer&& buf, offset offset, std::size_t size) const {
 
         assert(buf.size() >= size);
 
         if(!m_handle) {
-            return tl::make_unexpected(
-                    std::error_code{EBADF, std::generic_category()});
+            throw io_error("posix_file::file::pwrite", EBADF);
         }
 
         std::size_t bytes_written = 0;
@@ -236,8 +258,7 @@ public:
                 }
 
                 // Some other error condition, report
-                return tl::make_unexpected(
-                        std::error_code{errno, std::generic_category()});
+                throw io_error("posix_file::file::pwrite", errno);
             }
 
             bytes_written += n;
@@ -252,20 +273,19 @@ protected:
     file_handle m_handle;
 };
 
-static inline tl::expected<file, std::error_code>
+static inline file
 open(const std::filesystem::path& filepath, int flags, ::mode_t mode = 0) {
 
     int fd = ::open(filepath.c_str(), flags, mode);
 
     if(fd == -1) {
-        return tl::make_unexpected(
-                std::error_code{errno, std::generic_category()});
+        throw io_error("posix_file::open", errno);
     }
 
     return file{filepath, fd};
 }
 
-static inline tl::expected<file, std::error_code>
+static inline file
 create(const std::filesystem::path& filepath, int flags, ::mode_t mode) {
     return open(filepath, O_CREAT | flags, mode);
 }

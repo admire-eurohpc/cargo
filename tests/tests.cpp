@@ -24,7 +24,6 @@
 
 #include <fmt/format.h>
 #include <fmt/chrono.h>
-#include <thread>
 #include <chrono>
 #include <string_view>
 #include <fstream>
@@ -40,6 +39,17 @@
 
 using namespace std::literals;
 using namespace std::chrono_literals;
+
+std::ostream&
+operator<<(std::ostream& os, const cargo::error_code& ec) {
+    os << ec.name();
+    return os;
+}
+
+CATCH_REGISTER_ENUM(cargo::transfer_state, cargo::transfer_state::pending,
+                    cargo::transfer_state::running,
+                    cargo::transfer_state::completed,
+                    cargo::transfer_state::failed);
 
 struct scoped_file {
     explicit scoped_file(std::filesystem::path filepath)

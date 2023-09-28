@@ -322,6 +322,7 @@ endif ()
 add_subdirectory(etc)
 add_subdirectory(lib)
 add_subdirectory(src)
+add_subdirectory(util)
 
 if(CARGO_BUILD_TESTS)
   add_subdirectory(tests)

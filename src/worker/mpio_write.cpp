@@ -146,8 +146,12 @@ mpio_write::operator()() const {
     } catch(const posix_file::io_error& e) {
         LOGGER_ERROR("{}() failed: {}", e.where(), e.what());
         return make_system_error(e.error_code());
+    } catch (const std::system_error& e) {
+        LOGGER_ERROR("Unexpected system error: {}", e.what());
+        return make_system_error(e.code().value());
     } catch(const std::exception& e) {
-        std::cerr << e.what() << '\n';
+        LOGGER_ERROR("Unexpected exception: {}", e.what());
+        return error_code::other;
     }
 
     return error_code::success;

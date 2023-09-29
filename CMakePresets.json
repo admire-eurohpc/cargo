@@ -1,0 +1,203 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "displayName": "GCC",
+      "description": "Sets prefix, build, and install directories as well as common options",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/builds/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER_LAUNCHER": "/usr/bin/ccache",
+        "CMAKE_C_COMPILER_LAUNCHER": "/usr/bin/ccache",
+        "CMAKE_PREFIX_PATH": "${sourceParentDir}/prefix",
+        "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/prefix",
+        "CARGO_BUILD_TESTS": true
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "Build options for Debug",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always --pedantic"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Releae",
+      "description": "Build options for Release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "gcc",
+      "displayName": "GCC (system default)",
+      "description": "Build options for GCC (system default)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always",
+        "CMAKE_C_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "gcc-debug",
+      "displayName": "GCC (system default, debug)",
+      "description": "Build options for GCC (system default)",
+      "inherits": "gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always -O0"
+      }
+    },
+    {
+      "name": "gcc-10",
+      "displayName": "GCC 10",
+      "description": "Build options for GCC 10",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++-10",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc-10",
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always",
+        "CMAKE_C_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "gcc-11",
+      "displayName": "GCC 11",
+      "description": "Build options for GCC 11",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++-11",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc-11",
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always",
+        "CMAKE_C_FLAGS": "-Wall -Wextra -Werror -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "clang",
+      "displayName": "Clang (system default)",
+      "description": "Build options for Clang (system default)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_C_FLAGS": "-Wno-unused-command-line-argument -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "clang-10",
+      "displayName": "Clang 10",
+      "description": "Build options for Clang 10",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-10",
+        "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-10",
+        "CMAKE_C_FLAGS": "-Wno-unused-command-line-argument -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "clang-11",
+      "displayName": "Clang 11",
+      "description": "Build options for Clang 11",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-11",
+        "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-11",
+        "CMAKE_C_FLAGS": "-Wno-unused-command-line-argument -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "clang-12",
+      "displayName": "Clang 12",
+      "description": "Build options for Clang 12",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-12",
+        "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-12",
+        "CMAKE_C_FLAGS": "-Wno-unused-command-line-argument -fdiagnostics-color=always"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI",
+      "description": "Build options for CI",
+      "inherits": "base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER_LAUNCHER": null,
+        "CMAKE_C_COMPILER_LAUNCHER": null,
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_INSTALL_PREFIX": "/usr/local",
+        "CMAKE_PREFIX_PATH": "/usr/local",
+        "Boost_LIBRARY_DIR": "/usr/lib;/usr/lib64;/usr/lib64/openmpi/lib",
+        "CARGO_TRANSPORT_LIBRARY": "libfabric",
+        "CARGO_TRANSPORT_PROTOCOL": "ofi+tcp",
+        "CARGO_BIND_ADDRESS": "127.0.0.1",
+        "CARGO_BIND_PORT": "62000",
+        "CARGO_BUILD_TESTS": true
+      }
+    },
+    {
+      "name": "ci-debug",
+        "displayName": "CI (debug)",
+        "description": "Build options for CI (debug)",
+        "inherits": ["ci", "debug"]
+    },
+    {
+      "name": "ci-release",
+      "displayName": "CI (debug)",
+      "description": "Build options for CI (debug)",
+      "inherits": ["ci", "release"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "core-build",
+      "description": "Inherits environment from base configurePreset",
+      "configurePreset": "base",
+      "hidden": true
+    },
+    {
+      "name": "gcc",
+      "description": "Build with default GCC",
+      "configurePreset": "gcc",
+      "inherits": "core-build"
+    },
+    {
+      "name": "gcc-11",
+      "description": "Build with GCC 11",
+      "configurePreset": "gcc-11",
+      "inherits": "core-build"
+    },
+    {
+      "name": "clang",
+      "description": "Build with default Clang",
+      "configurePreset": "clang",
+      "inherits": "core-build"
+    },
+    {
+      "name": "clang-10",
+      "description": "Build with Clang 10",
+      "configurePreset": "clang-10",
+      "inherits": "core-build"
+    }
+  ]
+}

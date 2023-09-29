@@ -281,6 +281,9 @@ error_code::name() const {
             return "CARGO_NO_SUCH_TRANSFER";
         case error_value::transfer_in_progress:
             return "CARGO_TRANSFER_IN_PROGRESS";
+            /* ... */
+        case error_value::other:
+            return "CARGO_OTHER";
         default:
             return "CARGO_UNKNOWN_ERROR";
     }
@@ -302,6 +305,9 @@ error_code::message() const {
                     return "no such transfer";
                 case error_value::transfer_in_progress:
                     return "transfer in progress";
+                    /* ... */
+                case error_value::other:
+                    return "other";
                 default:
                     return "unknown error";
             }

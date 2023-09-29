@@ -44,6 +44,8 @@ class error_code {
         not_implemented = 2,
         no_such_transfer = 3,
         transfer_in_progress = 4,
+        /* ... */
+        other = 127,
     };
 
 public:
@@ -52,6 +54,8 @@ public:
     static const error_code not_implemented;
     static const error_code no_such_transfer;
     static const error_code transfer_in_progress;
+    /* ... */
+    static const error_code other;
 
     constexpr error_code() : error_code(error_value::success) {}
     constexpr explicit error_code(error_value v)
@@ -99,6 +103,8 @@ constexpr error_code error_code::no_such_transfer{
         error_value::no_such_transfer};
 constexpr error_code error_code::transfer_in_progress{
         error_value::transfer_in_progress};
+/* ... */
+constexpr error_code error_code::other{error_value::other};
 
 static constexpr cargo::error_code
 make_system_error(std::uint32_t ec) {

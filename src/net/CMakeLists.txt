@@ -31,6 +31,7 @@ target_sources(
 )
 
 target_link_libraries(rpc_common PUBLIC logger::logger thallium asio::asio)
+set_property(TARGET rpc_common PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # get the parent directory of the current directory so we can include
 # headers from these libraries as `<net/*.hpp>`

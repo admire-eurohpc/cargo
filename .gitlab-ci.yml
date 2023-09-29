@@ -7,8 +7,17 @@ stages:
 variables:
   PREFIX:
     /usr/local
-  LD_LIBRARY_PATH: "/usr/lib/:/usr/lib64:/usr/local/lib:/usr/local/lib64"
-  PKG_CONFIG_PATH: "/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:/usr/lib64/openmpi/lib/pkgconfig"
+  LD_LIBRARY_PATH: >-
+    /usr/lib/:
+    /usr/lib64:
+    /usr/local/lib:
+    /usr/local/lib64
+  PKG_CONFIG_PATH: >-
+    /usr/lib/pkgconfig:
+    /usr/lib64/pkgconfig:
+    /usr/local/lib/pkgconfig:
+    /usr/local/lib64/pkgconfig:
+    /usr/lib64/openmpi/lib/pkgconfig
 
 before_script:
   - source /etc/profile.d/modules.sh
@@ -25,6 +34,32 @@ debug:
   script:
     - cmake --preset ci-debug
     - cmake --build builds/ci-debug -j$(nproc) --target install
+    - cd builds/ci-debug
+    # cleanup intermediate files to save on artifact space
+    - grep "^rule.*\(_COMPILER_\|_STATIC_LIBRARY_\)"
+        $(find . -name rules.ninja) |
+          cut -d ' ' -f2 |
+          xargs -n1 ninja -t clean -r
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - builds/ci-debug
+
+integration:
+  stage: test
+  needs: [ debug ]
+  variables:
+    OMPI_ALLOW_RUN_AS_ROOT: "1"
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: "1"
+  script:
+    - ctest --test-dir builds/ci-debug -j$(nproc) --output-junit report.xml
+
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - builds/ci-debug/Testing/Temporary
+    reports:
+      junit: builds/ci-debug/report.xml
 
 sast:
   stage: test

@@ -40,11 +40,15 @@
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-std::ostream&
-operator<<(std::ostream& os, const cargo::error_code& ec) {
-    os << ec.name();
-    return os;
-}
+namespace Catch {
+template <>
+struct StringMaker<cargo::error_code> {
+    static std::string
+    convert(const cargo::error_code& ec) {
+        return std::string{ec.name()};
+    }
+};
+} // namespace Catch
 
 CATCH_REGISTER_ENUM(cargo::transfer_state, cargo::transfer_state::pending,
                     cargo::transfer_state::running,
@@ -240,6 +244,7 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
             // wait for the transfer to complete
             auto s = tx.wait();
 
+            CAPTURE(s.error());
             REQUIRE(s.state() == cargo::transfer_state::completed);
             REQUIRE(s.error() == cargo::error_code::success);
 
@@ -301,6 +306,7 @@ SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
             // wait for the transfer to complete
             auto s = tx.wait();
 
+            CAPTURE(s.error());
             REQUIRE(s.state() == cargo::transfer_state::completed);
             REQUIRE(s.error() == cargo::error_code::success);
 

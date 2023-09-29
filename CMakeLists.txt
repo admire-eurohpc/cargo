@@ -141,9 +141,9 @@ message(STATUS "[${PROJECT_NAME}] server bind address: ${CARGO_BIND_ADDRESS}")
 
 ### server bind port
 set(CARGO_BIND_PORT
-  "52000"
+  "62000"
   CACHE STRING
-  "Define the bind port for the ${PROJECT_NAME} server (default: 52000)"
+  "Define the bind port for the ${PROJECT_NAME} server (default: 62000)"
   )
 message(STATUS "[${PROJECT_NAME}] server bind port: ${CARGO_BIND_PORT}")
 
@@ -322,6 +322,7 @@ endif ()
 add_subdirectory(etc)
 add_subdirectory(lib)
 add_subdirectory(src)
+add_subdirectory(util)
 
 if(CARGO_BUILD_TESTS)
   add_subdirectory(tests)

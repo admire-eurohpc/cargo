@@ -1,4 +1,14 @@
-# Cargo
+<div align="center">
+<h1> Cargo </h1>
+
+[![build status)](https://img.shields.io/gitlab/pipeline-status/hpc/cargo?gitlab_url=https%3A%2F%2Fstorage.bsc.es%2Fgitlab%2F&logo=gitlab)](https://storage.bsc.es/gitlab/hpc/cargo/-/pipelines)
+[![latest release](https://storage.bsc.es/gitlab/hpc/cargo/-/badges/release.svg)](https://storage.bsc.es/gitlab/hpc/cargo/-/releases)
+[![GitLab (self-managed)](https://img.shields.io/gitlab/license/hpc/cargo?gitlab_url=https%3A%2F%2Fstorage.bsc.es%2Fgitlab)](https://storage.bsc.es/gitlab/hpc/cargo/-/blob/main/COPYING)
+[![Language](https://img.shields.io/static/v1?label=language&message=C99%20%2F%20C%2B%2B20&color=red)](https://en.wikipedia.org/wiki/C%2B%2B20)
+
+<p><b>A parallel data staging service for HPC clusters</b></p>
+
+</div>
 
 Cargo is a HPC data staging service that runs alongside applications helping 
 them to transfer data in parallel between local and shared storage tiers.
@@ -137,8 +147,26 @@ library (`${INSTALL_DIR}/lib/libcargo.so`) and its headers
 
 ## Testing
 
+Tests can be run automatically with CTest:
+
 ```shell
-cd build/tests/
-mpirun -np 4 ${INSTALL_DIR}/bin/cargo -C
-./tests -S ofi+tcp://127.0.0.1:52000
+cd build
+ctest -VV --output-on-failure --stop-on-failure -j 8
+```
+
+When this happens, a Cargo server with 3 workers is automatically started
+(via `mpirun`/`mpiexec`) and stopped (via RPC) so that tests can progress.
+
+Alternatively, during development one may desire to run the Cargo server
+manually and then the tests. In this case, the following commands can be used:
+
+```shell
+# start the Cargo server with 3 workers. The server will be listening on
+# port 62000 and will communicate with workers via MPI messages. The server can
+# be stopped with Ctrl+C, `kill -TERM <pid>` or `cargo_shutdown <address>`.)
+mpirun -np 4 ${INSTALL_DIR}/bin/cargo -l ofi+tcp://127.0.0.1:62000
+
+# run the tests
+cd build
+RUNNER_SKIP_START=1 ctest -VV --output-on-failure --stop-on-failure -j 8
 ```

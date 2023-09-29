@@ -48,6 +48,9 @@ private:
     ping(const network::request& req);
 
     void
+    shutdown(const network::request& req);
+
+    void
     transfer_datasets(const network::request& req,
                       const std::vector<cargo::dataset>& sources,
                       const std::vector<cargo::dataset>& targets);

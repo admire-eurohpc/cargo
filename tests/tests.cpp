@@ -215,10 +215,11 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
 
         cargo::server server{server_address};
 
-        const auto sources = prepare_datasets(cargo::dataset::type::parallel,
-                                              "source-dataset-{}", NDATASETS);
-        const auto targets = prepare_datasets(cargo::dataset::type::posix,
-                                              "target-dataset-{}", NDATASETS);
+        const auto sources =
+                prepare_datasets(cargo::dataset::type::parallel,
+                                 "pr-source-dataset-{}", NDATASETS);
+        const auto targets = prepare_datasets(
+                cargo::dataset::type::posix, "pr-target-dataset-{}", NDATASETS);
 
         static std::vector<scoped_file> input_files;
         input_files.reserve(sources.size());
@@ -275,10 +276,11 @@ SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
 
         cargo::server server{server_address};
 
-        const auto sources = prepare_datasets(cargo::dataset::type::posix,
-                                              "source-dataset-{}", NDATASETS);
-        const auto targets = prepare_datasets(cargo::dataset::type::parallel,
-                                              "target-dataset-{}", NDATASETS);
+        const auto sources = prepare_datasets(
+                cargo::dataset::type::posix, "pw-source-dataset-{}", NDATASETS);
+        const auto targets =
+                prepare_datasets(cargo::dataset::type::parallel,
+                                 "pw-target-dataset-{}", NDATASETS);
 
         static std::vector<scoped_file> input_files;
         input_files.reserve(sources.size());

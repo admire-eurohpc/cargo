@@ -82,6 +82,7 @@ master_server::master_server(std::string name, std::string address,
 
 #define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
     provider::define(EXPAND(ping));
+    provider::define(EXPAND(shutdown));
     provider::define(EXPAND(transfer_datasets));
     provider::define(EXPAND(transfer_status));
 
@@ -159,6 +160,17 @@ master_server::ping(const network::request& req) {
     LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
 
     req.respond(resp);
+}
+
+void master_server::shutdown(const network::request& req) {
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    LOGGER_INFO("rpc {:>} body: {{}}", rpc);
+    server::shutdown();
 }
 
 void

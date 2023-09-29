@@ -22,47 +22,36 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_library(rpc_common OBJECT)
-target_sources(
-  rpc_common
-  INTERFACE endpoint.hpp request.hpp serialization.hpp utilities.hpp
-            signal_listener.hpp
-  PRIVATE endpoint.cpp
+add_executable(cargo_ping)
+
+target_sources(cargo_ping
+  PRIVATE
+    ping.cpp
 )
 
-target_link_libraries(rpc_common PUBLIC logger::logger thallium asio::asio)
-set_property(TARGET rpc_common PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-# get the parent directory of the current directory so we can include
-# headers from these libraries as `<net/*.hpp>`
-get_filename_component(PARENT_DIRECTORY "../" ABSOLUTE)
-
-add_library(rpc_client STATIC)
-target_sources(
-  rpc_client
-  INTERFACE client.hpp
-  PRIVATE client.cpp
+target_link_libraries(cargo_ping
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
 )
 
-target_link_libraries(rpc_client PUBLIC rpc_common)
-target_include_directories(rpc_client PUBLIC ${PARENT_DIRECTORY})
-set_property(TARGET rpc_client PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_library(net::rpc_client ALIAS rpc_client)
+add_executable(cargo_shutdown)
 
-add_library(rpc_server STATIC)
-target_sources(
-  rpc_server
-  INTERFACE server.hpp
-  PRIVATE server.cpp
+target_sources(cargo_shutdown
+  PRIVATE
+    shutdown.cpp
 )
 
-target_link_libraries(rpc_server PUBLIC rpc_common)
-target_include_directories(rpc_server PUBLIC ${PARENT_DIRECTORY})
-set_property(TARGET rpc_server PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_library(net::rpc_server ALIAS rpc_server)
+target_link_libraries(cargo_shutdown
+        PUBLIC
+        fmt::fmt
+        CLI11::CLI11
+        net::rpc_client
+        cargo
+)
 
-add_library(net_net STATIC)
-target_include_directories(net_net PUBLIC ${PARENT_DIRECTORY})
-target_link_libraries(net_net PUBLIC rpc_client rpc_server)
-set_property(TARGET net_net PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_library(net::net ALIAS net_net)
+install(TARGETS cargo_ping cargo_shutdown
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

@@ -27,14 +27,15 @@ class Cargo(CMakePackage):
     """A parallel data stager for malleable applications."""
 
     homepage = "https://storage.bsc.es/gitlab/hpc/cargo"
-    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.1.0/cargo-v0.1.0.tar.bz2"
+    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.2.0/cargo-v0.2.0.tar.bz2"
     git = "https://storage.bsc.es/gitlab/hpc/cargo.git"
 
     maintainers("alberto-miranda")
 
     # available versions
     version("latest", branch="main")
-    version("0.1.0", sha256="981d00adefbc2ea530f57f8428bd7980e4aab2993a86d8ae4274334c8f055bdb")
+    version("0.1.0", sha256="981d00adefbc2ea530f57f8428bd7980e4aab2993a86d8ae4274334c8f055bdb", deprecated=True)
+    version("0.2.0", sha256="fd7fa31891b3961dcb376556ec5fa028bf512d96a7c688a160f9dade58dae36f")
 
     # build variants
     variant('build_type',
@@ -59,14 +60,18 @@ class Cargo(CMakePackage):
 
     # general dependencies
     depends_on("cmake@3.19", type='build')
+    depends_on("mpi")
+
+    #specific dependencies
+    # v0.2.0+
+    depends_on("boost@1.71 +mpi", when='@0.2.0:')
 
     # specific dependencies
     # v0.1.0+
-    depends_on("mpi", when='@0.1.0:')
     depends_on("argobots@1.1", when='@0.1.0:')
     depends_on("mochi-margo@0.9.8", when='@0.1.0:')
     depends_on("mochi-thallium@0.10.1", when='@0.1.0:')
-    depends_on("boost@1.71 +program_options +mpi", when='@0.1.0:')
+    depends_on("boost@1.71 +program_options +mpi", when='@:0.1.0')
     depends_on("boost@1.71 +iostreams", when='@0.1.0: +tests')
 
     with when("@0.1.0: +ofi"):

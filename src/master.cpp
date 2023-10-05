@@ -93,7 +93,7 @@ master_server::master_server(std::string name, std::string address,
     // The push_prefinalize_callback() and push_finalize_callback() functions
     // serve this purpose. The former is called before Mercury is finalized,
     // while the latter is called in between that and Argobots finalization.
-    m_network_engine.push_finalize_callback([this]() {
+    m_network_engine.push_prefinalize_callback([this]() {
         m_mpi_listener_ult->join();
         m_mpi_listener_ult = thallium::managed<thallium::thread>{};
         m_mpi_listener_ess->join();
@@ -136,11 +136,18 @@ master_server::mpi_listener_ult() {
         }
     }
 
+    LOGGER_INFO("Shutting down. Notifying workers...");
+
     // shutting down, notify all workers
     for(int rank = 1; rank < world.size(); ++rank) {
         LOGGER_INFO("msg <= to: {} body: {{shutdown}}", rank);
         world.send(static_cast<int>(rank), static_cast<int>(tag::shutdown));
     }
+
+    LOGGER_INFO("Entering exit barrier...");
+    world.barrier();
+
+    LOGGER_INFO("Exit");
 }
 
 #define RPC_NAME() (__FUNCTION__)
@@ -162,7 +169,8 @@ master_server::ping(const network::request& req) {
     req.respond(resp);
 }
 
-void master_server::shutdown(const network::request& req) {
+void
+master_server::shutdown(const network::request& req) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;

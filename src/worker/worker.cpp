@@ -152,6 +152,10 @@ worker::run() {
         }
     }
 
+    LOGGER_INFO("Entering exit barrier...");
+    world.barrier();
+    LOGGER_INFO("Exit");
+
     return 0;
 }
 

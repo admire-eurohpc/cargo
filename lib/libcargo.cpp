@@ -158,6 +158,12 @@ transfer
 transfer_datasets(const server& srv, const std::vector<dataset>& sources,
                   const std::vector<dataset>& targets) {
 
+    if(sources.size() != targets.size()) {
+        throw std::runtime_error(
+                "The number of input datasets does not match the number of "
+                "output datasets");
+    }
+
     network::client rpc_client{srv.protocol()};
     const auto rpc = network::rpc_info::create(RPC_NAME(), srv.address());
 

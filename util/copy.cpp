@@ -54,7 +54,9 @@ parse_command_line(int argc, char* argv[]) {
     CLI::App app{"Cargo parallel copy tool", cfg.progname};
 
     app.add_option("-s,--server", cfg.server_address,
-                   "Address of the Cargo server")
+                   "Address of the Cargo server (can also be\n"
+                   "provided via the CCP_SERVER environment\n"
+                   "variable)")
             ->option_text("ADDRESS")
             ->envname("CCP_SERVER")
             ->required();

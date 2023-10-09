@@ -52,6 +52,21 @@ target_link_libraries(cargo_shutdown
         cargo
 )
 
-install(TARGETS cargo_ping cargo_shutdown
+add_executable(ccp)
+
+target_sources(ccp
+  PRIVATE
+    copy.cpp
+)
+
+target_link_libraries(ccp
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
+)
+
+install(TARGETS cargo_ping cargo_shutdown ccp
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

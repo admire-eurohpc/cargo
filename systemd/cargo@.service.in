@@ -1,0 +1,11 @@
+[Unit]
+Description=Cargo parallel data stager
+
+[Service]
+Type=simple
+EnvironmentFile=%S/cargo/%I.cfg
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/cargoctl start -s ${CARGO_ADDRESS} -H ${CARGO_HOSTS} -n ${CARGO_NUM_NODES}
+ExecStop=@CMAKE_INSTALL_FULL_BINDIR@/cargoctl stop -s ${CARGO_ADDRESS}
+Restart=no
+PrivateTmp=true
+NoNewPrivileges=true

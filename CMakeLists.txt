@@ -357,6 +357,11 @@ endif()
 # using find_package()
 # ##############################################################################
 
+set(BIN_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}"
+    CACHE PATH "Path where ${PROJECT_NAME} binaries will be installed")
+set(DATA_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}"
+    CACHE PATH "Path where ${PROJECT_NAME} data files will be installed")
+
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
@@ -364,6 +369,7 @@ configure_package_config_file(
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
   INSTALL_DESTINATION
   "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}"
+  PATH_VARS BIN_INSTALL_DIR DATA_INSTALL_DIR
 )
 
 write_basic_package_version_file(

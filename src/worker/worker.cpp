@@ -196,6 +196,16 @@ worker::run() {
                 break;
             }
 
+            case tag::bw_shaping: {
+                shaper_message m;
+                world.recv(msg->source(), msg->tag(), m);
+                LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
+
+                // TODO: Do something with m.shaping;
+
+                break;
+            }
+
             case tag::shutdown:
                 LOGGER_INFO("msg => from: {} body: {{shutdown}}",
                             msg->source());

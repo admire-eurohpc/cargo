@@ -251,6 +251,17 @@ struct fmt::formatter<cargo::shaper_message> : formatter<std::string_view> {
 };
 
 template <>
+struct fmt::formatter<cargo::shaper_message> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::shaper_message& s, FormatContext& ctx) const {
+    const auto str = fmt::format("{{tid: {}, shaping: {}}}", s.tid(), s.shaping());
+        return formatter<std::string_view>::format(str, ctx);
+    }
+};
+
+template <>
 struct fmt::formatter<cargo::shutdown_message> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>

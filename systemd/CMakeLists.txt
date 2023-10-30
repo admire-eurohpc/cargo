@@ -22,51 +22,24 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-add_executable(cargo_ping)
+configure_file(cargo@.service.in cargo@.service @ONLY)
 
-target_sources(cargo_ping
-  PRIVATE
-    ping.cpp
-)
+# If requested, install the systemd unit files to the system directory
+# for user-defined services. Otherwise, install them to the configured
+# `datadir` directory (usually `/usr/share`).
+if(CARGO_SYSTEMD_INSTALL_UNIT_FILES)
+  include(systemd)
+  get_systemd_unit_directory(SYSTEMD_UNIT_DIRECTORY USER)
 
-target_link_libraries(cargo_ping
-  PUBLIC
-    fmt::fmt
-    CLI11::CLI11
-    net::rpc_client
-    cargo
-)
+  if(NOT SYSTEMD_UNIT_DIRECTORY)
+    message(FATAL_ERROR "Could not find systemd unit directory")
+  endif()
 
-add_executable(cargo_shutdown)
-
-target_sources(cargo_shutdown
-  PRIVATE
-    shutdown.cpp
-)
-
-target_link_libraries(cargo_shutdown
-        PUBLIC
-        fmt::fmt
-        CLI11::CLI11
-        net::rpc_client
-        cargo
-)
-
-add_executable(ccp)
-
-target_sources(ccp
-  PRIVATE
-    copy.cpp
-)
-
-target_link_libraries(ccp
-  PUBLIC
-    fmt::fmt
-    CLI11::CLI11
-    net::rpc_client
-    cargo
-)
-
-install(TARGETS cargo_ping cargo_shutdown ccp
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cargo@.service
+          DESTINATION ${SYSTEMD_UNIT_DIRECTORY}
+  )
+else()
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cargo@.service
+          DESTINATION ${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}
+  )
+endif()

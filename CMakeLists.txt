@@ -97,6 +97,10 @@ include(FetchContent)
 # that are substituted when generating defaults.cpp below
 include(GNUInstallDirs)
 
+# CMakeDependentOption defines cmake_dependent_option() which is used to
+# define options that depend on other options
+include(CMakeDependentOption)
+
 # Make sure that CMake can find our internal modules
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -148,6 +152,21 @@ set(CARGO_BIND_PORT
 message(STATUS "[${PROJECT_NAME}] server bind port: ${CARGO_BIND_PORT}")
 
 option(CARGO_BUILD_TESTS "Build tests (disabled by default)" OFF)
+
+### MPI options that should be passed to ${MPIEXEC_EXECUTABLE} when starting
+### the server via the `cargoctl` script
+set(CARGOCTL_MPIEXEC_OPTIONS "--map-by node --oversubscribe" CACHE STRING
+  "Options passed to `${MPIEXEC_EXECUTABLE}` by `cargoctl` when starting the server")
+
+### systemd support
+option(CARGO_SYSTEMD_SUPPORT "Enable systemd support (enabled by default)" ON)
+
+cmake_dependent_option(
+  CARGO_SYSTEMD_INSTALL_UNIT_FILES
+  "Install systemd unit files (disabled by default)"
+  OFF
+  "CARGO_SYSTEMD_SUPPORT"
+  OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -320,9 +339,13 @@ else ()
 endif ()
 
 add_subdirectory(etc)
+add_subdirectory(cli)
 add_subdirectory(lib)
 add_subdirectory(src)
-add_subdirectory(util)
+
+if(CARGO_SYSTEMD_SUPPORT)
+  add_subdirectory(systemd)
+endif()
 
 if(CARGO_BUILD_TESTS)
   add_subdirectory(tests)
@@ -334,6 +357,11 @@ endif()
 # using find_package()
 # ##############################################################################
 
+set(BIN_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}"
+    CACHE PATH "Path where ${PROJECT_NAME} binaries will be installed")
+set(DATA_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}"
+    CACHE PATH "Path where ${PROJECT_NAME} data files will be installed")
+
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
@@ -341,6 +369,7 @@ configure_package_config_file(
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
   INSTALL_DESTINATION
   "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}"
+  PATH_VARS BIN_INSTALL_DIR DATA_INSTALL_DIR
 )
 
 write_basic_package_version_file(

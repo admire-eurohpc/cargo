@@ -22,13 +22,71 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-@PACKAGE_INIT@
+################################################################################
+## cargoctl: A CLI tool to interact with a Cargo server
+# TODO: This is a hack: `cargoctl` needs to know the full path to the
+# installed `cargo` and `cargo_shutdown` programs but CMake doesn't seem to
+# provide a way to get this information at this stage. Thus, we set it manually
+# here :(
+set(CARGO_PROGRAM ${CMAKE_INSTALL_FULL_BINDIR}/cargo)
+set(CARGO_SHUTDOWN_PROGRAM ${CMAKE_INSTALL_FULL_BINDIR}/cargo_shutdown)
+configure_file(cargoctl.in cargoctl @ONLY)
 
-check_required_components("@PROJECT_NAME@")
 
-include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Exports.cmake")
+################################################################################
+## cargo_ping: A CLI tool to check if a Cargo server is running
+add_executable(cargo_ping)
 
-set_and_check(CARGO_BIN_INSTALL_DIR "@PACKAGE_BIN_INSTALL_DIR@")
-set_and_check(CARGO_DATA_INSTALL_DIR "@PACKAGE_DATA_INSTALL_DIR@")
+target_sources(cargo_ping
+  PRIVATE
+    ping.cpp
+)
 
-check_required_components("@PROJECT_NAME@")
+target_link_libraries(cargo_ping
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
+)
+
+################################################################################
+## cargo_shutdown: A CLI tool to shutdown a Cargo server
+add_executable(cargo_shutdown)
+
+target_sources(cargo_shutdown
+  PRIVATE
+    shutdown.cpp
+)
+
+target_link_libraries(cargo_shutdown
+        PUBLIC
+        fmt::fmt
+        CLI11::CLI11
+        net::rpc_client
+        cargo
+)
+
+################################################################################
+## ccp: A CLI tool to request a Cargo server to copy files between storage tiers
+add_executable(ccp)
+
+target_sources(ccp
+  PRIVATE
+    copy.cpp
+)
+
+target_link_libraries(ccp
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
+)
+
+install(TARGETS cargo_ping cargo_shutdown ccp
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cargoctl
+        DESTINATION ${CMAKE_INSTALL_BINDIR})

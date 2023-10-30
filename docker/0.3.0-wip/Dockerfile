@@ -22,7 +22,6 @@ RUN set -ex \
            boost-openmpi-devel \
            json-c-devel \
            openmpi-devel \
-           libconfig-devel \
     # install cmake 3.21+ since we need to produce JUnit XML files
     && curl -OL https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-Linux-x86_64.sh \
     && chmod u+x ./cmake-3.27.6-Linux-x86_64.sh \

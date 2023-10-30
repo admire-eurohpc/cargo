@@ -286,9 +286,6 @@ target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
 target_link_libraries(asio INTERFACE Threads::Threads)
 add_library(asio::asio ALIAS asio)
 
-
-pkg_check_modules(LIBCONFIG IMPORTED_TARGET libconfig>=1.4.9)
-
 if (CARGO_BUILD_TESTS)
 
   enable_testing()

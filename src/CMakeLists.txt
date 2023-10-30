@@ -65,8 +65,7 @@ target_include_directories(
 
 target_link_libraries(
   cargo_server
-  PRIVATE config
-          rpc_server
+  PRIVATE rpc_server
           cargo
           fmt::fmt
           MPI::MPI_CXX

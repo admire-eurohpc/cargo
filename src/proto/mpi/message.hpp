@@ -256,7 +256,8 @@ struct fmt::formatter<cargo::shaper_message> : formatter<std::string_view> {
     template <typename FormatContext>
     auto
     format(const cargo::shaper_message& s, FormatContext& ctx) const {
-    const auto str = fmt::format("{{tid: {}, shaping: {}}}", s.tid(), s.shaping());
+        const auto str =
+                fmt::format("{{tid: {}, shaping: {}}}", s.tid(), s.shaping());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

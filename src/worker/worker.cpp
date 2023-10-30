@@ -142,7 +142,7 @@ worker::run() {
             }
             continue;
         }
-
+        times = 0;
         switch(const auto t = static_cast<tag>(msg->tag())) {
             case tag::pread:
                 [[fallthrough]];
@@ -200,8 +200,16 @@ worker::run() {
                 shaper_message m;
                 world.recv(msg->source(), msg->tag(), m);
                 LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
+                for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
+                    const auto op = I->second.first.get();
+                    if(op) {
 
-                // TODO: Do something with m.shaping;
+                        op->set_bw_shaping(0);
+                    } else {
+                        LOGGER_INFO("Operation non existent", msg->source(), m);
+                    }
+                }
+
 
                 break;
             }

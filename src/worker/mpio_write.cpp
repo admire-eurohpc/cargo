@@ -148,9 +148,9 @@ mpio_write::progress(int ongoing_index) {
                             .count();
             if((elapsed_seconds) > 0) {
                 bw((m_block_size / (1024.0 * 1024.0)) / (elapsed_seconds));
-                LOGGER_INFO("BW (read) Update: {} / {} = {} mb/s [ Sleep {} ]",
-                            m_block_size / 1024.0, elapsed_seconds, bw(),
-                            sleep_value());
+                LOGGER_DEBUG("BW (read) Update: {} / {} = {} mb/s [ Sleep {} ]",
+                             m_block_size / 1024.0, elapsed_seconds, bw(),
+                             sleep_value());
             }
 
             m_bytes_per_rank += n;
@@ -159,6 +159,11 @@ mpio_write::progress(int ongoing_index) {
             ++index;
         }
 
+
+        // step pre-2 Create the directory if it does not exist
+        if(!m_output_path.parent_path().empty()) {
+            std::filesystem::create_directories(m_output_path.parent_path());
+        }
         // step 2. write buffer data in parallel to the PFS
         const auto output_file =
                 mpioxx::file::open(m_workers, m_output_path,

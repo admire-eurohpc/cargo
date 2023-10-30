@@ -121,6 +121,11 @@ mpio_read::operator()() {
             return make_mpi_error(ec);
         }
 
+
+        // step-pre3. Create needed directories
+        if(!m_output_path.parent_path().empty()) {
+            std::filesystem::create_directories(m_output_path.parent_path());
+        }
         // step3. POSIX write data
         m_output_file = std::make_unique<posix_file::file>(
                 posix_file::create(m_output_path, O_WRONLY, S_IRUSR | S_IWUSR));
@@ -187,9 +192,10 @@ mpio_read::progress(int ongoing_index) {
                             .count();
             if((elapsed_seconds) > 0) {
                 bw((m_block_size / (1024.0 * 1024.0)) / (elapsed_seconds));
-                LOGGER_INFO("BW (write) Update: {} / {} = {} mb/s [ Sleep {} ]",
-                            m_block_size / 1024.0, elapsed_seconds, bw(),
-                            sleep_value());
+                LOGGER_DEBUG(
+                        "BW (write) Update: {} / {} = {} mb/s [ Sleep {} ]",
+                        m_block_size / 1024.0, elapsed_seconds, bw(),
+                        sleep_value());
             }
             // Do sleep
             std::this_thread::sleep_for(sleep_value());

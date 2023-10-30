@@ -32,6 +32,7 @@
 #include <chrono>
 #include <cargo/error.hpp>
 
+constexpr const uint64_t TIMES = 100;
 namespace cargo {
 
 using transfer_id = std::uint64_t;
@@ -73,6 +74,9 @@ public:
 
     [[nodiscard]] bool
     supports_parallel_transfer() const noexcept;
+
+    void
+    path(std::string path);
 
     template <typename Archive>
     void

@@ -32,7 +32,7 @@ list(APPEND public_headers "fmt_formatters.hpp")
 
 target_include_directories(
   cargo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-               $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+               $<INSTALL_INTERFACE:include>
 )
 
 set_target_properties(cargo PROPERTIES PUBLIC_HEADER "${public_headers}")

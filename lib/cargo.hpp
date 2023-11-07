@@ -32,7 +32,6 @@
 #include <chrono>
 #include <cargo/error.hpp>
 
-constexpr const uint64_t TIMES = 100;
 namespace cargo {
 
 using transfer_id = std::uint64_t;

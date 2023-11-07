@@ -135,21 +135,7 @@ public:
 
         MPI_File result;
 
-        // At this point we may face the possibility of an unexistent directory
-        // The File open semantics will not create the directory and fail.
-        // As the operation are done in the prolog, we may not been able to create
-        // such directory in the parallel filesystem nor the adhoc fs.
-
-        // We will create the needed directories if we are writing.
-
-        if (mode == file_open_mode::wronly) {
-            // Decompose the filepath and create the needed directories.
-            const std::filesystem::path dir = filepath.parent_path();
-            if (!std::filesystem::exists(dir)) {
-                std::filesystem::create_directories(dir);
-            }
-        }
-
+    
         if(const auto ec =
                    MPI_File_open(comm, filepath.c_str(), static_cast<int>(mode),
                                  MPI_INFO_NULL, &result);

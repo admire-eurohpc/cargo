@@ -159,11 +159,6 @@ mpio_write::progress(int ongoing_index) {
             ++index;
         }
 
-
-        // step pre-2 Create the directory if it does not exist
-        if(!m_output_path.parent_path().empty()) {
-            std::filesystem::create_directories(m_output_path.parent_path());
-        }
         // step 2. write buffer data in parallel to the PFS
         const auto output_file =
                 mpioxx::file::open(m_workers, m_output_path,

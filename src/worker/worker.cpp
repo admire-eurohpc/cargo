@@ -109,7 +109,10 @@ worker::run() {
             // FIXME: sleep time should be configurable
 
             // Progress through all transfers
-            for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
+           
+            auto I = m_ops.begin();
+            auto IE = m_ops.end();
+            if (I != IE) {
                 auto op = I->second.first.get();
                 int index = I->second.second;
                 if(op) {
@@ -125,9 +128,6 @@ worker::run() {
 
                             // Transfer finished
                             I = m_ops.erase(I);
-                            if(I == m_ops.end()) {
-                                break;
-                            }
                         } else {
                             update_state(op->source(), op->tid(), op->seqno(),
                                          transfer_state::running, op->bw());
@@ -142,7 +142,7 @@ worker::run() {
             }
             continue;
         }
-        times = 0;
+
         switch(const auto t = static_cast<tag>(msg->tag())) {
             case tag::pread:
                 [[fallthrough]];
@@ -196,23 +196,6 @@ worker::run() {
                 break;
             }
 
-            case tag::bw_shaping: {
-                shaper_message m;
-                world.recv(msg->source(), msg->tag(), m);
-                LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
-                for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
-                    const auto op = I->second.first.get();
-                    if(op) {
-
-                        op->set_bw_shaping(0);
-                    } else {
-                        LOGGER_INFO("Operation non existent", msg->source(), m);
-                    }
-                }
-
-
-                break;
-            }
 
             case tag::shutdown:
                 LOGGER_INFO("msg => from: {} body: {{shutdown}}",

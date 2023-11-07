@@ -108,19 +108,15 @@ void
 master_server::mpi_listener_ult() {
 
     mpi::communicator world;
-    uint64_t times = 0;
     while(!m_shutting_down) {
 
         auto msg = world.iprobe();
 
         if(!msg) {
-            thallium::thread::self().sleep(m_network_engine, 150*times);
-            if (times < TIMES) {
-                times++;
-            }
+            thallium::thread::self().sleep(m_network_engine, 150);
             continue;
         }
-        times=0;
+
         switch(static_cast<cargo::tag>(msg->tag())) {
             case tag::status: {
                 status_message m;
@@ -226,74 +222,91 @@ master_server::transfer_datasets(const network::request& req,
     LOGGER_INFO("rpc {:>} body: {{sources: {}, targets: {}}}", rpc, sources,
                 targets);
 
-    m_request_manager.create(sources.size(), world.size() - 1)
+
+    // As we accept directories expanding directories should be done before and
+    // update sources and targets.
+
+    std::vector<cargo::dataset> v_s_new;
+    std::vector<cargo::dataset> v_d_new;
+
+    for(auto i = 0u; i < sources.size(); ++i) {
+
+        const auto& s = sources[i];
+        const auto& d = targets[i];
+
+
+        // We need to expand directories to single files on the s
+        // Then create a new message for each file and append the
+        // file to the d prefix
+        // We will asume that the path is the original relative
+        // i.e. ("xxxx:/xyyy/bbb -> gekko:/cccc/ttt ) then
+        // bbb/xxx -> ttt/xxx
+        const auto& p = s.path();
+        std::vector<std::filesystem::path> files;
+        if(std::filesystem::is_directory(p)) {
+            LOGGER_INFO("Expanding input directory {}", p);
+            for(const auto& f :
+                std::filesystem::recursive_directory_iterator(p)) {
+                if(std::filesystem::is_regular_file(f)) {
+                    files.push_back(f.path());
+                }
+            }
+
+            /*
+            We have all the files expanded. Now create a new
+            cargo::dataset for each file as s and a new
+            cargo::dataset appending the base directory in d to the
+            file name.
+            */
+            for(const auto& f : files) {
+                cargo::dataset s_new(s);
+                cargo::dataset d_new(d);
+                s_new.path(f);
+                // We need to get filename from the original root
+                // path (d.path) plus the path from f, removing the
+                // initial path p
+                d_new.path(d.path() / std::filesystem::path(
+                                              f.string().substr(p.size() + 1)));
+
+                LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
+                             d_new.path());
+                v_s_new.push_back(s_new);
+                v_d_new.push_back(d_new);
+            }
+
+        } else {
+            v_s_new.push_back(s);
+            v_d_new.push_back(d);
+        }
+    }
+
+    m_request_manager.create(v_s_new.size(), world.size() - 1)
             .or_else([&](auto&& ec) {
                 LOGGER_ERROR("Failed to create request: {}", ec);
                 LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
                 req.respond(generic_response{rpc.id(), ec});
             })
             .map([&](auto&& r) {
-                assert(sources.size() == targets.size());
-
-                for(auto i = 0u; i < sources.size(); ++i) {
-
-                    const auto& s = sources[i];
-                    const auto& d = targets[i];
+                assert(v_s_new.size() == v_d_new.size());
 
 
-                    // We need to expand directories to single files on the s
-                    // Then create a new message for each file and append the
-                    // file to the d prefix
-                    // We will asume that the path is the original relative
-                    // i.e. ("xxxx:/xyyy/bbb -> gekko:/cccc/ttt ) then
-                    // bbb/xxx -> ttt/xxx
-                    const auto& p = s.path();
-                    std::vector<std::filesystem::path> files;
-                    if(std::filesystem::is_directory(p)) {
-                        LOGGER_INFO("Expanding input directory {}", p);
-                        for(const auto& f :
-                            std::filesystem::recursive_directory_iterator(p)) {
-                            if (std::filesystem::is_regular_file(f)) {
-                                files.push_back(f.path());
-                            }
-                        }
+                // For all the files
+                for(std::size_t i = 0; i < v_s_new.size(); ++i) {
+                    const auto& s = v_s_new[i];
+                    const auto& d = v_d_new[i];
 
-                        /*
-                        We have all the files expanded. Now create a new
-                        cargo::dataset for each file as s and a new
-                        cargo::dataset appending the base directory in d to the
-                        file name.
-                        */
-                        for(const auto& f : files) {
-                            cargo::dataset s_new(s);
-                            cargo::dataset d_new(d);
-                            s_new.path(f);
-                            // We need to get filename from the original root path (d.path) plus the path from f, removing the initial path p
-                            d_new.path(d.path() / std::filesystem::path(f.string().substr(p.size() + 1)));
+                    // Create the directory if it does not exist
+                    if(!std::filesystem::path(d.path()).parent_path().empty()) {
+                        std::filesystem::create_directories(
+                                std::filesystem::path(d.path()).parent_path());
+                    }
 
-                            LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
-                                         d_new.path());
-                            for(std::size_t rank = 1; rank <= r.nworkers();
-                                ++rank) {
-                                const auto [t, m] =
-                                        make_message(r.tid(), i, s_new, d_new);
-                                LOGGER_INFO("msg <= to: {} body: {}", rank, m);
-                                world.send(static_cast<int>(rank), t, m);
-                            }
-                        }
-
-                    } else {
-                        // normal use case, we are specifying files
-
-                        for(std::size_t rank = 1; rank <= r.nworkers();
-                            ++rank) {
-                            const auto [t, m] = make_message(r.tid(), i, s, d);
-                            LOGGER_INFO("msg <= to: {} body: {}", rank, m);
-                            world.send(static_cast<int>(rank), t, m);
-                        }
+                    for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
+                        const auto [t, m] = make_message(r.tid(), i, s, d);
+                        LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+                        world.send(static_cast<int>(rank), t, m);
                     }
                 }
-
                 LOGGER_INFO("rpc {:<} body: {{retval: {}, tid: {}}}", rpc,
                             error_code::success, r.tid());
                 req.respond(response_with_id{rpc.id(), error_code::success,

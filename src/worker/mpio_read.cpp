@@ -121,11 +121,6 @@ mpio_read::operator()() {
             return make_mpi_error(ec);
         }
 
-
-        // step-pre3. Create needed directories
-        if(!m_output_path.parent_path().empty()) {
-            std::filesystem::create_directories(m_output_path.parent_path());
-        }
         // step3. POSIX write data
         m_output_file = std::make_unique<posix_file::file>(
                 posix_file::create(m_output_path, O_WRONLY, S_IRUSR | S_IWUSR));

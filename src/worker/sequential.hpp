@@ -40,7 +40,12 @@ public:
           m_output_path(std::move(output_path)) {}
 
     cargo::error_code
-    operator()() const final;
+    operator()() final;
+    cargo::error_code
+    progress() const;
+
+       int
+    progress(int ongoing_index ) final;
 
 private:
     mpi::communicator m_comm;

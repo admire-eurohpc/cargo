@@ -47,10 +47,11 @@ parallel_request::nworkers() const {
 }
 
 request_status::request_status(part_status s)
-    : m_state(s.state()), m_error_code(s.error()) {}
+    : m_state(s.state()), m_bw(s.bw()), m_error_code(s.error()) {}
 
-request_status::request_status(transfer_state s, std::optional<error_code> ec)
-    : m_state(s), m_error_code(ec) {}
+request_status::request_status(transfer_state s, float bw,
+                               std::optional<error_code> ec)
+    : m_state(s), m_bw(bw), m_error_code(ec) {}
 
 transfer_state
 request_status::state() const {
@@ -62,9 +63,19 @@ request_status::error() const {
     return m_error_code;
 }
 
+float
+request_status::bw() const {
+    return m_bw;
+}
+
 transfer_state
 part_status::state() const {
     return m_state;
+}
+
+float
+part_status::bw() const {
+    return m_bw;
 }
 
 std::optional<error_code>
@@ -73,8 +84,10 @@ part_status::error() const {
 }
 
 void
-part_status::update(transfer_state s, std::optional<error_code> ec) noexcept {
+part_status::update(transfer_state s, float bw,
+                    std::optional<error_code> ec) noexcept {
     m_state = s;
+    m_bw = bw;
     m_error_code = ec;
 }
 

@@ -26,6 +26,9 @@
 #ifndef CARGO_WORKER_HPP
 #define CARGO_WORKER_HPP
 
+#include "proto/mpi/message.hpp"
+#include <map>
+#include "ops.hpp"
 namespace cargo {
 
 class worker {
@@ -39,9 +42,11 @@ public:
     run();
 
 private:
+    std::map<std::pair <std::string, std::string>, std::pair< std::unique_ptr<cargo::operation>, int> > m_ops;
     std::string m_name;
     int m_rank;
     std::optional<std::filesystem::path> m_output_file;
+ 
 };
 
 } // namespace cargo

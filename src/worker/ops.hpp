@@ -30,7 +30,6 @@
 #include <filesystem>
 #include "proto/mpi/message.hpp"
 #include "cargo.hpp"
-
 namespace cargo {
 
 /**
@@ -47,7 +46,43 @@ public:
     virtual ~operation() = default;
 
     virtual cargo::error_code
-    operator()() const = 0;
+    operator()() = 0;
+
+
+    std::chrono::milliseconds
+    sleep_value() const;
+    // We pass a - or + value to decrease or increase the bw shaping.
+    void
+    set_bw_shaping(std::int16_t incr);
+    virtual cargo::error_code
+    progress() const = 0;
+    virtual int
+    progress(int index) = 0;
+
+
+    int
+    source();
+    std::uint64_t
+    tid();
+    std::uint32_t
+    seqno();
+    void
+    set_comm(int rank, std::uint64_t tid, std::uint32_t seqno, cargo::tag t);
+    cargo::tag
+    t();
+
+    float_t
+    bw();
+    void
+    bw(float_t bw);
+
+private:
+    std::int16_t m_sleep_value = 0;
+    int m_rank;
+    std::uint64_t m_tid;
+    std::uint32_t m_seqno;
+    cargo::tag m_t;
+    float m_bw;
 };
 
 } // namespace cargo

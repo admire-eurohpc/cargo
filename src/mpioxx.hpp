@@ -30,6 +30,7 @@
 #include <boost/mpi/error_string.hpp>
 #include <filesystem>
 #include <fmt/format.h>
+#include <fmt/chrono.h>
 #include <logger/logger.hpp>
 
 // very simple RAII wrappers for some MPI types + utility functions

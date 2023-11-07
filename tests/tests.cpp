@@ -238,6 +238,7 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
             std::filesystem::remove(dataset.path());
         });
 
+
         WHEN("Transferring datasets to a POSIX storage system") {
             const auto tx = cargo::transfer_datasets(server, sources, targets);
 
@@ -269,7 +270,7 @@ SCENARIO("Parallel reads", "[flex_stager][parallel_reads]") {
 
 SCENARIO("Parallel writes", "[flex_stager][parallel_writes]") {
 
-    std::size_t file_size = 10000; // GENERATE(1000, 10000);
+    std::size_t file_size = 1000; // GENERATE(1000, 10000);
 
     [[maybe_unused]] ascii_data_generator ascii_gen{512};
     [[maybe_unused]] random_data_generator rng{

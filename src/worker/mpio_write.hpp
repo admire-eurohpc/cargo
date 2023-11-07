@@ -25,7 +25,10 @@
 #ifndef CARGO_WORKER_MPIO_WRITE_HPP
 #define CARGO_WORKER_MPIO_WRITE_HPP
 
+#include <posix_file/file.hpp>
+#include <posix_file/views.hpp>
 #include "ops.hpp"
+#include "memory.hpp"
 
 namespace mpi = boost::mpi;
 
@@ -40,12 +43,33 @@ public:
           m_output_path(std::move(output_path)) {}
 
     cargo::error_code
-    operator()() const final;
+    operator()() final;
+
+    cargo::error_code
+    progress() const final;
+
+    int
+    progress(int ongoing_index) final;
+
 
 private:
     mpi::communicator m_workers;
     std::filesystem::path m_input_path;
     std::filesystem::path m_output_path;
+
+    cargo::error_code m_status;
+
+
+    std::unique_ptr<posix_file::file> m_input_file;
+    int m_workers_size;
+    int m_workers_rank;
+    std::size_t m_block_size;
+    std::size_t m_file_size;
+    int m_total_blocks;
+
+    memory_buffer m_buffer;
+    std::vector<buffer_region> m_buffer_regions;
+    std::size_t m_bytes_per_rank;
 };
 
 } // namespace cargo

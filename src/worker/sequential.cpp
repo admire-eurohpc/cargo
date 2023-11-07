@@ -29,9 +29,19 @@
 namespace cargo {
 
 cargo::error_code
-seq_operation::operator()() const {
+seq_operation::operator()() {
     LOGGER_CRITICAL("{}: to be implemented", __FUNCTION__);
     return cargo::error_code::not_implemented;
+}
+
+cargo::error_code
+seq_operation::progress() const {
+    return error_code::success;
+}
+
+int
+seq_operation::progress(int ongoing_index) {
+    return ++ongoing_index;
 }
 
 } // namespace cargo

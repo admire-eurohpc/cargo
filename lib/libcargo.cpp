@@ -93,7 +93,7 @@ transfer::status() const {
     network::client rpc_client{m_srv.protocol()};
     const auto rpc =
             network::rpc_info::create("transfer_status", m_srv.address());
-    using response_type = status_response<transfer_state, error_code>;
+    using response_type = status_response<transfer_state, float, error_code>;
 
     if(const auto lookup_rv = rpc_client.lookup(m_srv.address());
        lookup_rv.has_value()) {
@@ -105,7 +105,7 @@ transfer::status() const {
            call_rv.has_value()) {
 
             const response_type resp{call_rv.value()};
-            const auto& [s, ec] = resp.value();
+            const auto& [s, bw, ec] = resp.value();
 
             LOGGER_EVAL(resp.error_code(), INFO, ERROR,
                         "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
@@ -116,16 +116,16 @@ transfer::status() const {
                         fmt::format("rpc call failed: {}", resp.error_code()));
             }
 
-            return transfer_status{s, ec.value_or(error_code::success)};
+            return transfer_status{s, bw, ec.value_or(error_code::success)};
         }
     }
 
     throw std::runtime_error("rpc lookup failed");
 }
 
-transfer_status::transfer_status(transfer_state status,
+transfer_status::transfer_status(transfer_state status, float bw,
                                  error_code error) noexcept
-    : m_state(status), m_error(error) {}
+    : m_state(status), m_bw(bw), m_error(error) {}
 
 transfer_state
 transfer_status::state() const noexcept {
@@ -140,6 +140,11 @@ transfer_status::done() const noexcept {
 bool
 transfer_status::failed() const noexcept {
     return m_state == transfer_state::failed;
+}
+
+float
+transfer_status::bw() const {
+    return m_bw;
 }
 
 error_code

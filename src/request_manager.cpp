@@ -57,14 +57,15 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
 
 error_code
 request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
-                        transfer_state s, std::optional<error_code> ec) {
+                        transfer_state s, float bw,
+                        std::optional<error_code> ec) {
 
     abt::unique_lock lock(m_mutex);
 
     if(const auto it = m_requests.find(tid); it != m_requests.end()) {
         assert(seqno < it->second.size());
         assert(wid < it->second[seqno].size());
-        it->second[seqno][wid].update(s, ec);
+        it->second[seqno][wid].update(s, bw, ec);
         return error_code::success;
     }
 
@@ -92,7 +93,7 @@ request_manager::lookup(std::uint64_t tid) {
             }
         }
 
-        return request_status{transfer_state::completed};
+        return request_status{transfer_state::completed, 0.0f};
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);

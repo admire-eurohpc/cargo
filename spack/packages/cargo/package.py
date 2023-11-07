@@ -36,6 +36,7 @@ class Cargo(CMakePackage):
     version("latest", branch="main")
     version("0.1.0", sha256="981d00adefbc2ea530f57f8428bd7980e4aab2993a86d8ae4274334c8f055bdb", deprecated=True)
     version("0.2.0", sha256="fd7fa31891b3961dcb376556ec5fa028bf512d96a7c688a160f9dade58dae36f")
+    version("0.3.0", branch="rnou/directory_support")
 
     # build variants
     variant('build_type',

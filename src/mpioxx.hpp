@@ -135,6 +135,7 @@ public:
 
         MPI_File result;
 
+    
         if(const auto ec =
                    MPI_File_open(comm, filepath.c_str(), static_cast<int>(mode),
                                  MPI_INFO_NULL, &result);

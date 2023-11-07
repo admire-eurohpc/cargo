@@ -74,6 +74,9 @@ public:
     [[nodiscard]] bool
     supports_parallel_transfer() const noexcept;
 
+    void
+    path(std::string path);
+
     template <typename Archive>
     void
     serialize(Archive& ar) {

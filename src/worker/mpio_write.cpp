@@ -148,9 +148,9 @@ mpio_write::progress(int ongoing_index) {
                             .count();
             if((elapsed_seconds) > 0) {
                 bw((m_block_size / (1024.0 * 1024.0)) / (elapsed_seconds));
-                LOGGER_INFO("BW (read) Update: {} / {} = {} mb/s [ Sleep {} ]",
-                            m_block_size / 1024.0, elapsed_seconds, bw(),
-                            sleep_value());
+                LOGGER_DEBUG("BW (read) Update: {} / {} = {} mb/s [ Sleep {} ]",
+                             m_block_size / 1024.0, elapsed_seconds, bw(),
+                             sleep_value());
             }
 
             m_bytes_per_rank += n;

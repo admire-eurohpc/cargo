@@ -187,9 +187,10 @@ mpio_read::progress(int ongoing_index) {
                             .count();
             if((elapsed_seconds) > 0) {
                 bw((m_block_size / (1024.0 * 1024.0)) / (elapsed_seconds));
-                LOGGER_INFO("BW (write) Update: {} / {} = {} mb/s [ Sleep {} ]",
-                            m_block_size / 1024.0, elapsed_seconds, bw(),
-                            sleep_value());
+                LOGGER_DEBUG(
+                        "BW (write) Update: {} / {} = {} mb/s [ Sleep {} ]",
+                        m_block_size / 1024.0, elapsed_seconds, bw(),
+                        sleep_value());
             }
             // Do sleep
             std::this_thread::sleep_for(sleep_value());

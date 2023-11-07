@@ -250,6 +250,7 @@ struct fmt::formatter<cargo::shaper_message> : formatter<std::string_view> {
     }
 };
 
+
 template <>
 struct fmt::formatter<cargo::shutdown_message> : formatter<std::string_view> {
     // parse is inherited from formatter<string_view>.

@@ -71,18 +71,22 @@ public:
     [[nodiscard]] std::optional<error_code>
     error() const;
 
+    [[nodiscard]] float
+    bw() const;
+
     void
-    update(transfer_state s, std::optional<error_code> ec) noexcept;
+    update(transfer_state s, float bw, std::optional<error_code> ec) noexcept;
 
 private:
     transfer_state m_state{transfer_state::pending};
+    float m_bw;
     std::optional<error_code> m_error_code{};
 };
 
 class request_status {
 public:
     request_status() = default;
-    explicit request_status(transfer_state s,
+    explicit request_status(transfer_state s, float bw,
                             std::optional<error_code> ec = {});
     explicit request_status(part_status s);
 
@@ -92,8 +96,12 @@ public:
     [[nodiscard]] std::optional<error_code>
     error() const;
 
+    [[nodiscard]] float
+    bw() const;
+
 private:
     transfer_state m_state{transfer_state::pending};
+    float m_bw;
     std::optional<error_code> m_error_code{};
 };
 
@@ -121,8 +129,8 @@ struct fmt::formatter<cargo::request_status> : formatter<std::string_view> {
             }
         };
 
-        const auto str = fmt::format("{{state: {}, error_code: {}}}",
-                                     state_name(s), s.error());
+        const auto str = fmt::format("{{state: {}, bw: {}, error_code: {}}}",
+                                     state_name(s), s.bw(), s.error());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

@@ -84,7 +84,24 @@ target_link_libraries(ccp
     cargo
 )
 
-install(TARGETS cargo_ping cargo_shutdown ccp
+################################################################################
+## shaping: A CLI tool to request a Cargo server to slowdown transfers 
+add_executable(shaping)
+
+target_sources(shaping
+  PRIVATE
+    shaping.cpp
+)
+
+target_link_libraries(shaping
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
+)
+
+install(TARGETS cargo_ping cargo_shutdown ccp shaping
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 

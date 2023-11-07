@@ -35,7 +35,14 @@
 
 namespace cargo {
 
-enum class tag : int { pread, pwrite, sequential, status, shutdown };
+enum class tag : int {
+    pread,
+    pwrite,
+    sequential,
+    bw_shaping,
+    status,
+    shutdown
+};
 
 class transfer_message {
 
@@ -75,10 +82,10 @@ private:
     serialize(Archive& ar, const unsigned int version) {
         (void) version;
 
-        ar & m_tid;
-        ar & m_seqno;
-        ar & m_input_path;
-        ar & m_output_path;
+        ar& m_tid;
+        ar& m_seqno;
+        ar& m_input_path;
+        ar& m_output_path;
     }
 
     std::uint64_t m_tid{};
@@ -95,10 +102,10 @@ public:
     status_message() = default;
 
     status_message(std::uint64_t tid, std::uint32_t seqno,
-                   cargo::transfer_state state,
+                   cargo::transfer_state state, float bw,
                    std::optional<cargo::error_code> error_code = std::nullopt)
-        : m_tid(tid), m_seqno(seqno), m_state(state), m_error_code(error_code) {
-    }
+        : m_tid(tid), m_seqno(seqno), m_state(state), m_bw(bw),
+          m_error_code(error_code) {}
 
     [[nodiscard]] std::uint64_t
     tid() const {
@@ -115,6 +122,12 @@ public:
         return m_state;
     }
 
+    [[nodiscard]] float
+    bw() const {
+        return m_bw;
+    }
+
+
     [[nodiscard]] std::optional<cargo::error_code>
     error_code() const {
         return m_error_code;
@@ -126,17 +139,54 @@ private:
     serialize(Archive& ar, const unsigned int version) {
         (void) version;
 
-        ar & m_tid;
-        ar & m_seqno;
-        ar & m_state;
-        ar & m_error_code;
+        ar& m_tid;
+        ar& m_seqno;
+        ar& m_state;
+        ar& m_bw;
+        ar& m_error_code;
     }
 
     std::uint64_t m_tid{};
     std::uint32_t m_seqno{};
     cargo::transfer_state m_state{};
+    float m_bw{};
     std::optional<cargo::error_code> m_error_code{};
 };
+
+class shaper_message {
+
+    friend class boost::serialization::access;
+
+public:
+    shaper_message() = default;
+
+    shaper_message(std::uint64_t tid, std::int16_t shaping)
+        : m_tid(tid), m_shaping(shaping) {}
+
+    [[nodiscard]] std::uint64_t
+    tid() const {
+        return m_tid;
+    }
+
+    [[nodiscard]] std::int16_t
+    shaping() const {
+        return m_shaping;
+    }
+
+private:
+    template <class Archive>
+    void
+    serialize(Archive& ar, const unsigned int version) {
+        (void) version;
+
+        ar& m_tid;
+        ar& m_shaping;
+    }
+
+    std::uint64_t m_tid{};
+    std::uint16_t m_shaping{};
+};
+
 
 class shutdown_message {
 
@@ -176,12 +226,26 @@ struct fmt::formatter<cargo::status_message> : formatter<std::string_view> {
     format(const cargo::status_message& s, FormatContext& ctx) const {
         const auto str =
                 s.error_code()
-                        ? fmt::format("{{tid: {}, seqno: {}, state: {}, "
-                                      "error_code: {}}}",
-                                      s.tid(), s.seqno(), s.state(),
-                                      *s.error_code())
-                        : fmt::format("{{tid: {}, seqno: {}, state: {}}}",
-                                      s.tid(), s.seqno(), s.state());
+                        ? fmt::format(
+                                  "{{tid: {}, seqno: {}, state: {}, bw: {}, "
+                                  "error_code: {}}}",
+                                  s.tid(), s.seqno(), s.state(), s.bw(),
+                                  *s.error_code())
+                        : fmt::format(
+                                  "{{tid: {}, seqno: {}, state: {}, bw: {}}}",
+                                  s.tid(), s.seqno(), s.state(), s.bw());
+        return formatter<std::string_view>::format(str, ctx);
+    }
+};
+
+template <>
+struct fmt::formatter<cargo::shaper_message> : formatter<std::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto
+    format(const cargo::shaper_message& s, FormatContext& ctx) const {
+        const auto str =
+                fmt::format("{{tid: {}, shaping: {}}}", s.tid(), s.shaping());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

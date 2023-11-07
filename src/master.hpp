@@ -58,6 +58,11 @@ private:
     void
     transfer_status(const network::request& req, std::uint64_t tid);
 
+    // Receives a request to increase or decrease BW 
+    // -1 faster, 0 , +1 slower
+    void
+    bw_shaping(const network::request& req, std::uint64_t tid, std::int16_t shaping);
+
 private:
     // Dedicated execution stream for the MPI listener ULT
     thallium::managed<thallium::xstream> m_mpi_listener_ess;

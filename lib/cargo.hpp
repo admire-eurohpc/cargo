@@ -26,6 +26,7 @@
 #ifndef CARGO_HPP
 #define CARGO_HPP
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -76,8 +77,8 @@ public:
     template <typename Archive>
     void
     serialize(Archive& ar) {
-        ar & m_path;
-        ar & m_type;
+        ar& m_path;
+        ar& m_type;
     }
 
 private:
@@ -149,7 +150,7 @@ class transfer_status {
     friend transfer_status
     transfer::status() const;
 
-    transfer_status(transfer_state status, error_code error) noexcept;
+    transfer_status(transfer_state status, float bw, error_code error) noexcept;
 
 public:
     /**
@@ -187,8 +188,12 @@ public:
     [[nodiscard]] error_code
     error() const;
 
+    [[nodiscard]] float
+    bw() const;
+
 private:
     transfer_state m_state;
+    float m_bw;
     error_code m_error;
 };
 

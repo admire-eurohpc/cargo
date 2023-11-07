@@ -85,6 +85,7 @@ master_server::master_server(std::string name, std::string address,
     provider::define(EXPAND(shutdown));
     provider::define(EXPAND(transfer_datasets));
     provider::define(EXPAND(transfer_status));
+    provider::define(EXPAND(bw_shaping));
 
 #undef EXPAND
 
@@ -125,7 +126,7 @@ master_server::mpi_listener_ult() {
                             msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
-                                         m.state(), m.error_code());
+                                         m.state(), m.bw(), m.error_code());
                 break;
             }
 
@@ -161,6 +162,32 @@ master_server::ping(const network::request& req) {
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
 
     LOGGER_INFO("rpc {:>} body: {{}}", rpc);
+
+    const auto resp = generic_response{rpc.id(), error_code::success};
+
+    LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
+
+    req.respond(resp);
+}
+
+
+void
+master_server::bw_shaping(const network::request& req, std::uint64_t tid,
+                          std::int16_t shaping) {
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+    mpi::communicator world;
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    LOGGER_INFO("rpc {:>} body: {{tid: {}, shaping: {}}}", rpc, tid, shaping);
+
+    for(int rank = 1; rank < world.size(); ++rank) {
+        const auto m = cargo::shaper_message{tid, shaping};
+        LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+        world.send(static_cast<int>(rank), static_cast<int>(tag::bw_shaping),
+                   m);
+    }
 
     const auto resp = generic_response{rpc.id(), error_code::success};
 
@@ -232,7 +259,7 @@ master_server::transfer_status(const network::request& req, std::uint64_t tid) {
     using proto::status_response;
 
     using response_type =
-            status_response<cargo::transfer_state, cargo::error_code>;
+            status_response<cargo::transfer_state, float, cargo::error_code>;
 
     mpi::communicator world;
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
@@ -248,9 +275,9 @@ master_server::transfer_status(const network::request& req, std::uint64_t tid) {
             .map([&](auto&& rs) {
                 LOGGER_INFO("rpc {:<} body: {{retval: {}, status: {}}}", rpc,
                             error_code::success, rs);
-                req.respond(
-                        response_type{rpc.id(), error_code::success,
-                                      std::make_pair(rs.state(), rs.error())});
+                req.respond(response_type{
+                        rpc.id(), error_code::success,
+                        std::make_tuple(rs.state(), rs.bw(), rs.error())});
             });
 }
 

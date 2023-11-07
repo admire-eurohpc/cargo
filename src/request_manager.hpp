@@ -60,7 +60,8 @@ public:
 
     error_code
     update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
-           transfer_state s, std::optional<error_code> ec = std::nullopt);
+           transfer_state s, float bw,
+           std::optional<error_code> ec = std::nullopt);
 
     tl::expected<request_status, error_code>
     lookup(std::uint64_t tid);

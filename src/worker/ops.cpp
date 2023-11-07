@@ -54,4 +54,57 @@ operation::make_operation(cargo::tag t, mpi::communicator workers,
     }
 }
 
+std::chrono::milliseconds
+operation::sleep_value() const {
+    if(m_sleep_value <= 0)
+        return std::chrono::milliseconds{0};
+    else
+        return std::chrono::milliseconds{m_sleep_value * 100};
+}
+
+void
+operation::set_bw_shaping(std::int16_t incr) {
+    m_sleep_value += incr;
+}
+
+int
+operation::source() {
+    return m_rank;
+}
+std::uint64_t
+operation::tid() {
+    return m_tid;
+}
+std::uint32_t
+operation::seqno() {
+    return m_seqno;
+}
+
+cargo::tag
+operation::t() {
+    return m_t;
+}
+
+float_t
+operation::bw() {
+    return m_bw;
+}
+
+void operation::bw(float_t bw) {
+    m_bw = bw;
+}
+void
+operation::set_comm(int rank, std::uint64_t tid, std::uint32_t seqno,
+                    cargo::tag t) {
+    m_rank = rank;
+    m_tid = tid;
+    m_seqno = seqno;
+    m_t = t;
+}
+
+cargo::error_code
+operation::progress() const {
+    return error_code::other;
+}
+
 } // namespace cargo

@@ -56,8 +56,8 @@ public:
     template <typename Archive>
     constexpr void
     serialize(Archive&& ar) {
-        ar & m_op_id;
-        ar & m_error_code;
+        ar& m_op_id;
+        ar& m_error_code;
     }
 
 private:
@@ -104,9 +104,10 @@ template <typename Error>
 using response_with_id = response_with_value<std::uint64_t, Error>;
 
 
-template <typename Status, typename Error>
+template <typename Status, typename Bw, typename Error>
 using status_response =
-        response_with_value<std::pair<Status, std::optional<Error>>, Error>;
+        response_with_value<std::tuple<Status, Bw, std::optional<Error>>,
+                            Error>;
 
 } // namespace cargo::proto
 

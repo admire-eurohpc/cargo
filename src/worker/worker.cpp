@@ -27,9 +27,8 @@
 #include <logger/logger.hpp>
 #include <boost/mpi.hpp>
 #include <boost/mpi/error_string.hpp>
-#include "ops.hpp"
+
 #include "worker.hpp"
-#include "proto/mpi/message.hpp"
 #include "fmt_formatters.hpp"
 
 namespace mpi = boost::mpi;
@@ -54,11 +53,11 @@ make_communicator(const mpi::communicator& comm, const mpi::group& group,
 
 void
 update_state(int rank, std::uint64_t tid, std::uint32_t seqno,
-             cargo::transfer_state st,
+             cargo::transfer_state st, float bw,
              std::optional<cargo::error_code> ec = std::nullopt) {
 
     mpi::communicator world;
-    const cargo::status_message m{tid, seqno, st, ec};
+    const cargo::status_message m{tid, seqno, st, bw, ec};
     LOGGER_INFO("msg <= to: {} body: {{payload: {}}}", rank, m);
     world.send(rank, static_cast<int>(cargo::tag::status), m);
 }
@@ -102,14 +101,45 @@ worker::run() {
     LOGGER_INFO("{:=>{}}", "", greeting.size());
 
     bool done = false;
-
     while(!done) {
 
         auto msg = world.iprobe();
 
         if(!msg) {
             // FIXME: sleep time should be configurable
-            std::this_thread::sleep_for(150ms);
+
+            // Progress through all transfers
+            for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
+                auto op = I->second.first.get();
+                int index = I->second.second;
+                if(op) {
+                    if(op->t() == tag::pread or op->t() == tag::pwrite) {
+                        index = op->progress(index);
+                        if(index == -1) {
+                            // operation finished
+                            cargo::error_code ec = op->progress();
+                            update_state(op->source(), op->tid(), op->seqno(),
+                                         ec ? transfer_state::failed
+                                            : transfer_state::completed,
+                                         0.0f, ec);
+
+                            // Transfer finished
+                            I = m_ops.erase(I);
+                            if(I == m_ops.end()) {
+                                break;
+                            }
+                        } else {
+                            update_state(op->source(), op->tid(), op->seqno(),
+                                         transfer_state::running, op->bw());
+                            I->second.second = index;
+                        }
+                    }
+                }
+            }
+
+            if(m_ops.size() == 0) {
+                std::this_thread::sleep_for(150ms);
+            }
             continue;
         }
 
@@ -122,19 +152,47 @@ worker::run() {
                 transfer_message m;
                 world.recv(msg->source(), msg->tag(), m);
                 LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
+                m_ops.emplace(std::make_pair(
+                        make_pair(m.input_path(), m.output_path()),
+                        make_pair(operation::make_operation(t, workers,
+                                                            m.input_path(),
+                                                            m.output_path()),
+                                  0)));
 
-                const auto op = operation::make_operation(
-                        t, workers, m.input_path(), m.output_path());
+                const auto op =
+                        m_ops[make_pair(m.input_path(), m.output_path())]
+                                .first.get();
 
-                update_state(msg->source(), m.tid(), m.seqno(),
-                             transfer_state::running);
+                op->set_comm(msg->source(), m.tid(), m.seqno(), t);
+
+                update_state(op->source(), op->tid(), op->seqno(),
+                             transfer_state::running, -1.0f);
+                // Different scenarios read -> write | write -> read
 
                 cargo::error_code ec = (*op)();
+                if(ec != cargo::error_code::transfer_in_progress) {
+                    update_state(op->source(), op->tid(), op->seqno(),
+                                 transfer_state::failed, -1.0f, ec);
+                    m_ops.erase(make_pair(m.input_path(), m.output_path()));
+                }
+                break;
+            }
 
-                update_state(msg->source(), m.tid(), m.seqno(),
-                             ec ? transfer_state::failed
-                                : transfer_state::completed,
-                             ec);
+            case tag::bw_shaping: {
+                shaper_message m;
+                world.recv(msg->source(), msg->tag(), m);
+                LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
+                for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
+                    const auto op = I->second.first.get();
+                    if(op) {
+
+                        op->set_bw_shaping(0);
+                    } else {
+                        LOGGER_INFO("Operation non existent", msg->source(), m);
+                    }
+                }
+
+
                 break;
             }
 

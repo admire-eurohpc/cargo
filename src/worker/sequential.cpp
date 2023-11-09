@@ -31,17 +31,20 @@ namespace cargo {
 cargo::error_code
 seq_operation::operator()() {
     LOGGER_CRITICAL("{}: to be implemented", __FUNCTION__);
+    m_status = cargo::error_code::not_implemented;
     return cargo::error_code::not_implemented;
 }
 
 cargo::error_code
 seq_operation::progress() const {
-    return error_code::success;
+    return m_status;
 }
 
 int
 seq_operation::progress(int ongoing_index) {
-    return ++ongoing_index;
+    ongoing_index++;
+    m_status = cargo::error_code::not_implemented;
+    return -1;
 }
 
 } // namespace cargo

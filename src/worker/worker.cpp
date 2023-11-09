@@ -109,30 +109,29 @@ worker::run() {
             // FIXME: sleep time should be configurable
 
             // Progress through all transfers
-           
+
             auto I = m_ops.begin();
             auto IE = m_ops.end();
-            if (I != IE) {
+            if(I != IE) {
                 auto op = I->second.first.get();
                 int index = I->second.second;
                 if(op) {
-                    if(op->t() == tag::pread or op->t() == tag::pwrite) {
-                        index = op->progress(index);
-                        if(index == -1) {
-                            // operation finished
-                            cargo::error_code ec = op->progress();
-                            update_state(op->source(), op->tid(), op->seqno(),
-                                         ec ? transfer_state::failed
-                                            : transfer_state::completed,
-                                         0.0f, ec);
 
-                            // Transfer finished
-                            I = m_ops.erase(I);
-                        } else {
-                            update_state(op->source(), op->tid(), op->seqno(),
-                                         transfer_state::running, op->bw());
-                            I->second.second = index;
-                        }
+                    index = op->progress(index);
+                    if(index == -1) {
+                        // operation finished
+                        cargo::error_code ec = op->progress();
+                        update_state(op->source(), op->tid(), op->seqno(),
+                                     ec ? transfer_state::failed
+                                        : transfer_state::completed,
+                                     0.0f, ec);
+
+                        // Transfer finished
+                        I = m_ops.erase(I);
+                    } else {
+                        update_state(op->source(), op->tid(), op->seqno(),
+                                     transfer_state::running, op->bw());
+                        I->second.second = index;
                     }
                 }
             }

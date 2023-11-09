@@ -51,6 +51,7 @@ private:
     mpi::communicator m_comm;
     std::filesystem::path m_input_path;
     std::filesystem::path m_output_path;
+    cargo::error_code m_status;
 };
 
 } // namespace cargo

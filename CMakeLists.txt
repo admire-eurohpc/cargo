@@ -326,7 +326,7 @@ find_package(MPI REQUIRED)
 # ##############################################################################
 
 # set compile flags
-add_compile_options("-Wall" "-Wextra" "-Werror" "$<$<CONFIG:RELEASE>:-O3>")
+add_compile_options("-Wall" "-Wextra" "-Werror" "-fconcepts" "$<$<CONFIG:RELEASE>:-O3>")
 add_compile_definitions("$<$<CONFIG:DEBUG,ASan>:CARGO_DEBUG_BUILD>")
 add_compile_definitions("$<$<CONFIG:DEBUG,ASan>:__LOGGER_ENABLE_DEBUG__>")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

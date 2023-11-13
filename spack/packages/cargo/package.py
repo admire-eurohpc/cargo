@@ -65,7 +65,7 @@ class Cargo(CMakePackage):
 
     #specific dependencies
     # v0.2.0+
-    depends_on("boost@1.71 +mpi", when='@0.2.0:')
+    depends_on("boost@1.71: +mpi", when='@0.2.0:')
 
     # specific dependencies
     # v0.1.0+

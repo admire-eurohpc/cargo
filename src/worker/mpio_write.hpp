@@ -38,9 +38,9 @@ class mpio_write : public operation {
 
 public:
     mpio_write(mpi::communicator workers, std::filesystem::path input_path,
-               std::filesystem::path output_path)
+               std::filesystem::path output_path, std::uint64_t block_size)
         : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
-          m_output_path(std::move(output_path)) {}
+          m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
 
     cargo::error_code
     operator()() final;
@@ -70,6 +70,7 @@ private:
     memory_buffer m_buffer;
     std::vector<buffer_region> m_buffer_regions;
     std::size_t m_bytes_per_rank;
+    std::uint64_t m_kb_size;
 };
 
 } // namespace cargo

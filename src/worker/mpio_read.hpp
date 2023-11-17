@@ -38,7 +38,7 @@ class mpio_read : public operation {
 
 public:
     mpio_read(mpi::communicator workers, std::filesystem::path input_path,
-              std::filesystem::path output_path);
+              std::filesystem::path output_path, std::uint64_t block_size);
 
     cargo::error_code
     operator()() final;
@@ -62,6 +62,7 @@ private:
     std::size_t m_block_size;
     memory_buffer m_buffer;
     std::vector<buffer_region> m_buffer_regions;
+    std::uint64_t m_kb_size;
     
 };
 

@@ -46,7 +46,7 @@ class server {
 
 public:
     server(std::string name, std::string address, bool daemonize,
-           std::filesystem::path rundir,
+           std::filesystem::path rundir, std::uint64_t block_size,
            std::optional<std::filesystem::path> pidfile = {});
 
     ~server();
@@ -106,7 +106,8 @@ private:
     bool m_daemonize;
     std::filesystem::path m_rundir;
     std::optional<std::filesystem::path> m_pidfile;
-    logger::logger_config m_logger_config;
+    std::uint64_t m_kb_size;
+    logger::logger_config m_logger_config;   
 
 protected:
     thallium::engine m_network_engine;

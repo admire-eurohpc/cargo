@@ -58,7 +58,7 @@ update_state(int rank, std::uint64_t tid, std::uint32_t seqno,
 
     mpi::communicator world;
     const cargo::status_message m{tid, seqno, st, bw, ec};
-    LOGGER_INFO("msg <= to: {} body: {{payload: {}}}", rank, m);
+    LOGGER_DEBUG("msg <= to: {} body: {{payload: {}}}", rank, m);
     world.send(rank, static_cast<int>(cargo::tag::status), m);
 }
 
@@ -72,6 +72,11 @@ worker::worker(std::string name, int rank)
 void
 worker::set_output_file(std::filesystem::path output_file) {
     m_output_file = std::move(output_file);
+}
+
+void 
+worker::set_block_size(std::uint64_t block_size) {
+    m_block_size = block_size;
 }
 
 int
@@ -155,7 +160,7 @@ worker::run() {
                         make_pair(m.input_path(), m.output_path()),
                         make_pair(operation::make_operation(t, workers,
                                                             m.input_path(),
-                                                            m.output_path()),
+                                                            m.output_path(), m_block_size),
                                   0)));
 
                 const auto op =
@@ -185,7 +190,7 @@ worker::run() {
                     const auto op = I->second.first.get();
                     if(op) {
 
-                        op->set_bw_shaping(0);
+                        op->set_bw_shaping(m.shaping());
                     } else {
                         LOGGER_INFO("Operation non existent", msg->source(), m);
                     }

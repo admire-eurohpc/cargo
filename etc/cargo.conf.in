@@ -23,4 +23,7 @@ global_settings: [
 
   # number of worker threads to serve I/O requests
   workers: 4,
+
+  # Block Size (in kb) for I/O requestss
+  blocksize: 512,
 ]

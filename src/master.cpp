@@ -71,9 +71,9 @@ using namespace std::literals;
 namespace cargo {
 
 master_server::master_server(std::string name, std::string address,
-                             bool daemonize, std::filesystem::path rundir,
+                             bool daemonize, std::filesystem::path rundir, std::uint64_t block_size,
                              std::optional<std::filesystem::path> pidfile)
-    : server(std::move(name), std::move(address), daemonize, std::move(rundir),
+    : server(std::move(name), std::move(address), daemonize, std::move(rundir), std::move(block_size),
              std::move(pidfile)),
       provider(m_network_engine, 0),
       m_mpi_listener_ess(thallium::xstream::create()),
@@ -85,7 +85,7 @@ master_server::master_server(std::string name, std::string address,
     provider::define(EXPAND(shutdown));
     provider::define(EXPAND(transfer_datasets));
     provider::define(EXPAND(transfer_status));
-    provider::define(EXPAND(bw_shaping));
+    provider::define(EXPAND(bw_control));
 
 #undef EXPAND
 
@@ -121,7 +121,7 @@ master_server::mpi_listener_ult() {
             case tag::status: {
                 status_message m;
                 world.recv(msg->source(), msg->tag(), m);
-                LOGGER_INFO("msg => from: {} body: {{payload: {}}}",
+                LOGGER_DEBUG("msg => from: {} body: {{payload: {}}}",
                             msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
@@ -171,7 +171,7 @@ master_server::ping(const network::request& req) {
 
 
 void
-master_server::bw_shaping(const network::request& req, std::uint64_t tid,
+master_server::bw_control(const network::request& req, std::uint64_t tid,
                           std::int16_t shaping) {
     using network::get_address;
     using network::rpc_info;
@@ -238,10 +238,13 @@ master_server::transfer_datasets(const network::request& req,
         // We need to expand directories to single files on the s
         // Then create a new message for each file and append the
         // file to the d prefix
-        // We will asume that the path is the original relative
+        // We will asume that the path is the original absolute
+        // The prefix selects the method of transfer 
+        // And if not specified then we will use none
         // i.e. ("xxxx:/xyyy/bbb -> gekko:/cccc/ttt ) then
         // bbb/xxx -> ttt/xxx
         const auto& p = s.path();
+        
         std::vector<std::filesystem::path> files;
         if(std::filesystem::is_directory(p)) {
             LOGGER_INFO("Expanding input directory {}", p);

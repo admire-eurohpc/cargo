@@ -112,7 +112,7 @@ transfer::status() const {
             const response_type resp{call_rv.value()};
             const auto& [s, bw, ec] = resp.value();
 
-            LOGGER_EVAL(resp.error_code(), INFO, ERROR,
+            LOGGER_EVAL(resp.error_code(), ERROR, INFO,
                         "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
                         resp.error_code(), resp.op_id());
 
@@ -123,6 +123,41 @@ transfer::status() const {
 
             return transfer_status{s, bw, ec.value_or(error_code::success)};
         }
+    }
+
+    throw std::runtime_error("rpc lookup failed");
+}
+
+void
+transfer::bw_control(std::int16_t bw_control) const {
+
+    using proto::generic_response;
+
+    network::client rpc_client{m_srv.protocol()};
+    const auto rpc = network::rpc_info::create("bw_control", m_srv.address());
+    using response_type = generic_response<error_code>;
+
+    if(const auto lookup_rv = rpc_client.lookup(m_srv.address());
+       lookup_rv.has_value()) {
+        const auto& endp = lookup_rv.value();
+
+        LOGGER_INFO("rpc {:<} body: {{tid: {}}}", rpc, m_id);
+
+        if(const auto call_rv = endp.call(rpc.name(), m_id, bw_control);
+           call_rv.has_value()) {
+
+            const response_type resp{call_rv.value()};
+
+            LOGGER_EVAL(resp.error_code(), ERROR, INFO,
+                        "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
+                        resp.error_code(), resp.op_id());
+
+            if(resp.error_code()) {
+                throw std::runtime_error(
+                        fmt::format("rpc call failed: {}", resp.error_code()));
+            }
+        }
+        return;
     }
 
     throw std::runtime_error("rpc lookup failed");
@@ -189,7 +224,7 @@ transfer_datasets(const server& srv, const std::vector<dataset>& sources,
 
             const response_with_id resp{call_rv.value()};
 
-            LOGGER_EVAL(resp.error_code(), INFO, ERROR,
+            LOGGER_EVAL(resp.error_code(), ERROR, INFO,
                         "rpc {:>} body: {{retval: {}}} [op_id: {}]", rpc,
                         resp.error_code(), resp.op_id());
 

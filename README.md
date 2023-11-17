@@ -170,3 +170,24 @@ mpirun -np 4 ${INSTALL_DIR}/bin/cargo -l ofi+tcp://127.0.0.1:62000
 cd build
 RUNNER_SKIP_START=1 ctest -VV --output-on-failure --stop-on-failure -j 8
 ```
+
+
+## Options
+Cargo supports the following option:
+```
+b --blocksize (default is 512). Transfers will use this blocksize in kbytes. 
+```
+
+## Utilities
+There are a few utility command line programs that can be used to interact with Cargo.
+
+```shell
+cli/ccp --server ofi+tcp://127.0.0.1:62000 --input /directory/subdir --output /directorydst/subdirdst --if <method> --of <method> 
+```
+`--input` and `--output` are required arguments, and can be a directory or a file path.
+`--if` and `--of`select the specific transfer method, on V0.3.2 there are only to possibilities:
+
+`--if mpio`  (It will read in parallel from i.e. lustre using MPI, and write using posix calls.)
+`--of mpio`  (It will read using posix calls, and write using MPI (i.e. to lustre))
+
+Other commands are `ping`, `shutdown` and `shaping` (for bw control).

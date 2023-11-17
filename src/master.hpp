@@ -35,7 +35,7 @@ class master_server : public network::server,
                       public network::provider<master_server> {
 public:
     master_server(std::string name, std::string address, bool daemonize,
-                  std::filesystem::path rundir,
+                  std::filesystem::path rundir, std::uint64_t block_size,
                   std::optional<std::filesystem::path> pidfile = {});
 
     ~master_server();
@@ -61,7 +61,7 @@ private:
     // Receives a request to increase or decrease BW 
     // -1 faster, 0 , +1 slower
     void
-    bw_shaping(const network::request& req, std::uint64_t tid, std::int16_t shaping);
+    bw_control(const network::request& req, std::uint64_t tid, std::int16_t shaping);
 
 private:
     // Dedicated execution stream for the MPI listener ULT

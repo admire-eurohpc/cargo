@@ -38,6 +38,9 @@ public:
     void
     set_output_file(std::filesystem::path output_file);
 
+    void
+    set_block_size(std::uint64_t block_size);
+
     int
     run();
 
@@ -46,6 +49,7 @@ private:
     std::string m_name;
     int m_rank;
     std::optional<std::filesystem::path> m_output_file;
+    std::uint64_t m_block_size;
  
 };
 

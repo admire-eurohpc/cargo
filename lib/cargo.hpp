@@ -61,12 +61,12 @@ private:
 class dataset {
 
 public:
-    enum class type { posix, parallel };
+    enum class type { posix, parallel, none, gekkofs, hercules, expand, dataclay };
 
     dataset() noexcept = default;
 
     explicit dataset(std::string path,
-                     dataset::type type = dataset::type::posix) noexcept;
+                     dataset::type type = dataset::type::none) noexcept;
 
     [[nodiscard]] std::string
     path() const noexcept;
@@ -86,7 +86,7 @@ public:
 
 private:
     std::string m_path;
-    dataset::type m_type = dataset::type::posix;
+    dataset::type m_type = dataset::type::none;
 };
 
 
@@ -120,6 +120,15 @@ public:
      */
     [[nodiscard]] transfer_status
     status() const;
+
+
+    /**
+     * @brief updates the bw control of the transfer
+     * 
+     * @param bw_control 
+     */
+    void
+    bw_control (std::int16_t bw_control) const;
 
     /**
      * Wait for the associated transfer to complete.

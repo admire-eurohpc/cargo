@@ -26,6 +26,7 @@
 #define CARGO_FMT_FORMATTERS_HPP
 
 #include <iomanip>
+#include <vector>
 #include <string_view>
 #include <optional>
 #include <fmt/format.h>

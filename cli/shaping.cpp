@@ -89,7 +89,7 @@ main(int argc, char* argv[]) {
 
         if(const auto result = rpc_client.lookup(address); result.has_value()) {
             const auto& endpoint = result.value();
-            const auto retval = endpoint.call("bw_shaping", cfg.tid, cfg.shaping);
+            const auto retval = endpoint.call("bw_control", cfg.tid, cfg.shaping);
 
             if(retval.has_value()) {
 
@@ -100,7 +100,7 @@ main(int argc, char* argv[]) {
                 return EXIT_SUCCESS;
             }
 
-            fmt::print(stderr, "bw_shaping RPC failed\n");
+            fmt::print(stderr, "bw_control RPC failed\n");
             return EXIT_FAILURE;
 
         } else {

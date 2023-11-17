@@ -32,9 +32,9 @@ namespace cargo {
 
 mpio_read::mpio_read(mpi::communicator workers,
                      std::filesystem::path input_path,
-                     std::filesystem::path output_path)
+                     std::filesystem::path output_path, std::uint64_t block_size)
     : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
-      m_output_path(std::move(output_path)) {}
+      m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
 
 cargo::error_code
 mpio_read::operator()() {
@@ -48,7 +48,7 @@ mpio_read::operator()() {
                 m_workers, m_input_path, mpioxx::file_open_mode::rdonly);
 
         mpioxx::offset file_size = input_file.size();
-        std::size_t block_size = 512 * 1024u;
+        std::size_t block_size = m_kb_size * 1024u;
 
         // create block type
         MPI_Datatype block_type;

@@ -49,6 +49,7 @@ struct cargo_config {
     bool daemonize = false;
     std::optional<fs::path> output_file;
     std::string address;
+    std::uint64_t blocksize;
 };
 
 cargo_config
@@ -75,6 +76,11 @@ parse_command_line(int argc, char* argv[]) {
                    "Check `fi_info` to see the list of available protocols.\n")
             ->option_text("ADDRESS")
             ->required();
+            
+    app.add_option("-b,--blocksize", cfg.blocksize,
+                    "Number of bytes to send in each message (in kb). Defaults to 512(kb).\n")
+            ->option_text("BLOCKSIZE")
+            ->default_val(512);
 
     app.add_flag_function(
             "-v,--version",
@@ -112,7 +118,7 @@ main(int argc, char* argv[]) {
     try {
         if(const auto rank = world.rank(); rank == 0) {
             cargo::master_server srv{cfg.progname, cfg.address, cfg.daemonize,
-                                     fs::current_path()};
+                                     fs::current_path(), cfg.blocksize};
 
             if(cfg.output_file) {
                 srv.configure_logger(logger::logger_type::file,
@@ -127,6 +133,8 @@ main(int argc, char* argv[]) {
             if(cfg.output_file) {
                 w.set_output_file(get_process_output_file(*cfg.output_file));
             }
+
+            w.set_block_size(cfg.blocksize);
 
             return w.run();
         }

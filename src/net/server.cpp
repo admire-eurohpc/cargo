@@ -78,13 +78,13 @@ write_pidfile(const std::filesystem::path& pidfile) {
 namespace network {
 
 server::server(std::string name, std::string address, bool daemonize,
-               std::filesystem::path rundir,
+               std::filesystem::path rundir, std::uint64_t block_size, 
                std::optional<std::filesystem::path> pidfile)
 
     : m_name(std::move(name)), m_address(std::move(address)),
       m_daemonize(daemonize), m_rundir(std::move(rundir)),
       m_pidfile(daemonize ? std::make_optional(m_rundir / (m_name + ".pid"))
-                          : std::move(pidfile)),
+                          : std::move(pidfile)), m_kb_size(block_size),
       m_logger_config(m_name, logger::logger_type::console_color),
       m_network_engine(m_address, THALLIUM_SERVER_MODE) {}
 
@@ -267,6 +267,7 @@ server::print_configuration() const {
         LOGGER_INFO("  - pidfile: {}", *m_pidfile);
     }
 
+    LOGGER_INFO("  - block_size: {} kb", m_kb_size);
     LOGGER_INFO("  - address for remote requests: {}", self_address());
     LOGGER_INFO("");
 }

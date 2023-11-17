@@ -34,21 +34,21 @@ namespace cargo {
 std::unique_ptr<operation>
 operation::make_operation(cargo::tag t, mpi::communicator workers,
                           std::filesystem::path input_path,
-                          std::filesystem::path output_path) {
+                          std::filesystem::path output_path, std::uint64_t block_size) {
     using cargo::tag;
     switch(t) {
         case tag::pread:
             return std::make_unique<mpio_read>(std::move(workers),
                                                std::move(input_path),
-                                               std::move(output_path));
+                                               std::move(output_path), block_size);
         case tag::pwrite:
             return std::make_unique<mpio_write>(std::move(workers),
                                                 std::move(input_path),
-                                                std::move(output_path));
+                                                std::move(output_path), block_size);
         case tag::sequential:
             return std::make_unique<seq_operation>(std::move(workers),
                                                    std::move(input_path),
-                                                   std::move(output_path));
+                                                   std::move(output_path), block_size);
         default:
             return {};
     }

@@ -40,7 +40,7 @@ mpio_write::operator()() {
 
         const auto workers_size = m_workers.size();
         const auto workers_rank = m_workers.rank();
-        std::size_t block_size = 512 * 1024u; // 512 kb
+        std::size_t block_size = m_kb_size * 1024u; 
         std::size_t file_size = std::filesystem::file_size(m_input_path);
 
         // compute the number of blocks in the file

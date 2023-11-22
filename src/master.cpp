@@ -267,9 +267,14 @@ master_server::transfer_datasets(const network::request& req,
                 s_new.path(f);
                 // We need to get filename from the original root
                 // path (d.path) plus the path from f, removing the
-                // initial path p
+                // initial path p (taking care of the trailing /)
+                auto leading = p.size();
+                if(leading>0 and p.back() == '/') {
+                    leading--;
+                }
+
                 d_new.path(d.path() / std::filesystem::path(
-                                              f.string().substr(p.size() + 1)));
+                                              f.string().substr(leading + 1)));
 
                 LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
                              d_new.path());

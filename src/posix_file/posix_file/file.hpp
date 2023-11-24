@@ -182,7 +182,7 @@ public:
     fallocate(int mode, offset offset, std::size_t len) const {
 
         if(!m_handle) {
-            throw io_error("posix_file::file::fallocate", EBADF);
+            throw io_error("posix_file::file::fallocate (handle)", EBADF);
         }
 
         int ret = ::fallocate(m_handle.native(), mode, offset,
@@ -190,15 +190,15 @@ public:
 
         if(ret == -1) {
             // Try an alternative to fallocate for beegfs
-            if(errno == EOPNOTSUPP) {
-                ret = ::posix_fallocate(m_handle.native(), offset,
-                                        static_cast<off_t>(len));
-                if (ret == -1) {
-                    throw io_error("posix_file::file::posix_fallocate", errno);
-                } else return;
-            }
+
+            ret = ::posix_fallocate(m_handle.native(), offset,
+                                    static_cast<off_t>(len));
+            if(ret == -1) {
+                throw io_error("posix_file::file::posix_fallocate", errno);
+            } else
+                return;
+
             throw io_error("posix_file::file::fallocate", errno);
-            
         }
     }
 

@@ -40,7 +40,7 @@ mpio_write::operator()() {
 
         const auto workers_size = m_workers.size();
         const auto workers_rank = m_workers.rank();
-        std::size_t block_size = m_kb_size * 1024u; 
+        std::size_t block_size = m_kb_size * 1024u;
         std::size_t file_size = std::filesystem::file_size(m_input_path);
 
         // compute the number of blocks in the file
@@ -140,6 +140,10 @@ mpio_write::progress(int ongoing_index) {
                          fmt::join(buffer_regions[index].end() - 10,
                                    buffer_regions[index].end(), ""));
 
+
+            m_bytes_per_rank += n;
+            // Do sleep
+            std::this_thread::sleep_for(sleep_value());
             auto end = std::chrono::steady_clock::now();
             // Send transfer bw
             double elapsed_seconds =
@@ -153,9 +157,6 @@ mpio_write::progress(int ongoing_index) {
                              sleep_value());
             }
 
-            m_bytes_per_rank += n;
-            // Do sleep
-            std::this_thread::sleep_for(sleep_value());
             ++index;
         }
 

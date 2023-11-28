@@ -32,7 +32,8 @@ namespace cargo {
 
 mpio_read::mpio_read(mpi::communicator workers,
                      std::filesystem::path input_path,
-                     std::filesystem::path output_path, std::uint64_t block_size)
+                     std::filesystem::path output_path,
+                     std::uint64_t block_size)
     : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
       m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
 
@@ -179,6 +180,8 @@ mpio_read::progress(int ongoing_index) {
             auto start = std::chrono::steady_clock::now();
             m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
                                   file_range.size());
+            // Do sleep
+            std::this_thread::sleep_for(sleep_value());
             auto end = std::chrono::steady_clock::now();
             // Send transfer bw
             double elapsed_seconds =
@@ -192,8 +195,6 @@ mpio_read::progress(int ongoing_index) {
                         m_block_size / 1024.0, elapsed_seconds, bw(),
                         sleep_value());
             }
-            // Do sleep
-            std::this_thread::sleep_for(sleep_value());
 
             ++index;
         }

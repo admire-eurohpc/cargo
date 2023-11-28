@@ -115,7 +115,6 @@ worker::run() {
             auto op = I->second.first.get();
             int index = I->second.second;
             if(op) {
-
                 index = op->progress(index);
                 if(index == -1) {
                     // operation finished
@@ -128,8 +127,11 @@ worker::run() {
                     // Transfer finished
                     I = m_ops.erase(I);
                 } else {
-                    update_state(op->source(), op->tid(), op->seqno(),
-                                 transfer_state::running, op->bw());
+                    // update only if BW is set
+                    if(op->bw() > 0.0f) {
+                        update_state(op->source(), op->tid(), op->seqno(),
+                                     transfer_state::running, op->bw());
+                    }
                     I->second.second = index;
                 }
             }
@@ -188,7 +190,6 @@ worker::run() {
                 for(auto I = m_ops.begin(); I != m_ops.end(); I++) {
                     const auto op = I->second.first.get();
                     if(op) {
-
                         op->set_bw_shaping(m.shaping());
                     } else {
                         LOGGER_INFO("Operation non existent", msg->source(), m);

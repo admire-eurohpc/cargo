@@ -74,7 +74,7 @@ worker::set_output_file(std::filesystem::path output_file) {
     m_output_file = std::move(output_file);
 }
 
-void 
+void
 worker::set_block_size(std::uint64_t block_size) {
     m_block_size = block_size;
 }
@@ -107,40 +107,39 @@ worker::run() {
 
     bool done = false;
     while(!done) {
+        // Always loop pending operations
+
+        auto I = m_ops.begin();
+        auto IE = m_ops.end();
+        if(I != IE) {
+            auto op = I->second.first.get();
+            int index = I->second.second;
+            if(op) {
+
+                index = op->progress(index);
+                if(index == -1) {
+                    // operation finished
+                    cargo::error_code ec = op->progress();
+                    update_state(op->source(), op->tid(), op->seqno(),
+                                 ec ? transfer_state::failed
+                                    : transfer_state::completed,
+                                 0.0f, ec);
+
+                    // Transfer finished
+                    I = m_ops.erase(I);
+                } else {
+                    update_state(op->source(), op->tid(), op->seqno(),
+                                 transfer_state::running, op->bw());
+                    I->second.second = index;
+                }
+            }
+        }
+
 
         auto msg = world.iprobe();
 
         if(!msg) {
-            // FIXME: sleep time should be configurable
-
-            // Progress through all transfers
-
-            auto I = m_ops.begin();
-            auto IE = m_ops.end();
-            if(I != IE) {
-                auto op = I->second.first.get();
-                int index = I->second.second;
-                if(op) {
-
-                    index = op->progress(index);
-                    if(index == -1) {
-                        // operation finished
-                        cargo::error_code ec = op->progress();
-                        update_state(op->source(), op->tid(), op->seqno(),
-                                     ec ? transfer_state::failed
-                                        : transfer_state::completed,
-                                     0.0f, ec);
-
-                        // Transfer finished
-                        I = m_ops.erase(I);
-                    } else {
-                        update_state(op->source(), op->tid(), op->seqno(),
-                                     transfer_state::running, op->bw());
-                        I->second.second = index;
-                    }
-                }
-            }
-
+            // Only wait if there are no pending operations and no messages
             if(m_ops.size() == 0) {
                 std::this_thread::sleep_for(150ms);
             }
@@ -158,9 +157,9 @@ worker::run() {
                 LOGGER_INFO("msg => from: {} body: {}", msg->source(), m);
                 m_ops.emplace(std::make_pair(
                         make_pair(m.input_path(), m.output_path()),
-                        make_pair(operation::make_operation(t, workers,
-                                                            m.input_path(),
-                                                            m.output_path(), m_block_size),
+                        make_pair(operation::make_operation(
+                                          t, workers, m.input_path(),
+                                          m.output_path(), m_block_size),
                                   0)));
 
                 const auto op =

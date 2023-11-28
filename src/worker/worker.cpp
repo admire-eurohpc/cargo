@@ -116,6 +116,7 @@ worker::run() {
             int index = I->second.second;
             if(op) {
                 index = op->progress(index);
+                LOGGER_INFO("Progress: {}", index);
                 if(index == -1) {
                     // operation finished
                     cargo::error_code ec = op->progress();
@@ -133,6 +134,7 @@ worker::run() {
                                      transfer_state::running, op->bw());
                     }
                     I->second.second = index;
+                    ++I;
                 }
             }
         }

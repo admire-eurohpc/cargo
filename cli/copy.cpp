@@ -29,19 +29,24 @@
 #include <CLI/CLI.hpp>
 #include <ranges>
 
-enum class dataset_flags { posix, mpio };
+enum class dataset_flags { posix, parallel, none, gekkofs, hercules, expand, dataclay };
 
-std::map<std::string, dataset_flags> dataset_flags_map{
-        {"posix", dataset_flags::posix},
-        {"mpio", dataset_flags::mpio}};
+std::map<std::string, cargo::dataset::type> dataset_flags_map{
+        {"posix", cargo::dataset::type::posix},
+        {"parallel", cargo::dataset::type::parallel},
+        {"none", cargo::dataset::type::none},
+        {"gekkofs", cargo::dataset::type::gekkofs},
+        {"hercules", cargo::dataset::type::hercules},
+        {"expand", cargo::dataset::type::expand},
+        {"dataclay", cargo::dataset::type::dataclay}};
 
 struct copy_config {
     std::string progname;
     std::string server_address;
     std::vector<std::filesystem::path> inputs;
-    dataset_flags input_flags = dataset_flags::posix;
+    cargo::dataset::type input_flags = cargo::dataset::type::posix;
     std::vector<std::filesystem::path> outputs;
-    dataset_flags output_flags = dataset_flags::posix;
+    cargo::dataset::type output_flags = cargo::dataset::type::posix;
 };
 
 copy_config
@@ -119,17 +124,13 @@ main(int argc, char* argv[]) {
         std::transform(cfg.inputs.cbegin(), cfg.inputs.cend(),
                        std::back_inserter(inputs), [&](const auto& src) {
                            return cargo::dataset{
-                                   src, cfg.input_flags == dataset_flags::mpio
-                                                ? cargo::dataset::type::parallel
-                                                : cargo::dataset::type::posix};
+                                   src, cfg.input_flags};
                        });
 
         std::transform(cfg.outputs.cbegin(), cfg.outputs.cend(),
                        std::back_inserter(outputs), [&cfg](const auto& tgt) {
                            return cargo::dataset{
-                                   tgt, cfg.output_flags == dataset_flags::mpio
-                                                ? cargo::dataset::type::parallel
-                                                : cargo::dataset::type::posix};
+                                   tgt, cfg.output_flags};
                        });
 
         const auto tx = cargo::transfer_datasets(server, inputs, outputs);

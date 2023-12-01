@@ -33,9 +33,9 @@ namespace cargo {
 mpio_read::mpio_read(mpi::communicator workers,
                      std::filesystem::path input_path,
                      std::filesystem::path output_path,
-                     std::uint64_t block_size)
+                     std::uint64_t block_size, FSPlugin::type fs_type)
     : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
-      m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
+      m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)), m_fs_type(fs_type) {}
 
 cargo::error_code
 mpio_read::operator()() {
@@ -123,8 +123,9 @@ mpio_read::operator()() {
         }
 
         // step3. POSIX write data
+        // We need to create the directory if it does not exists (using FSPlugin)
         m_output_file = std::make_unique<posix_file::file>(
-                posix_file::create(m_output_path, O_WRONLY, S_IRUSR | S_IWUSR));
+                posix_file::create(m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_type));
 
         m_output_file->fallocate(0, 0, file_size);
 

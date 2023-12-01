@@ -260,6 +260,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(expected)
 
+### GekkoFS: Optional for gekkofs
+find_package(GekkoFS)
+if (GekkoFS_FOUND)
+  add_compile_definitions(GEKKOFS_PLUGIN)
+endif()
 ### Threads: required by ASIO
 find_package(Threads REQUIRED)
 

@@ -77,6 +77,9 @@ public:
     void
     path(std::string path);
 
+    [[nodiscard]] dataset::type
+    get_type() const;
+
     template <typename Archive>
     void
     serialize(Archive& ar) {
@@ -86,7 +89,7 @@ public:
 
 private:
     std::string m_path;
-    dataset::type m_type = dataset::type::none;
+    dataset::type m_type;
 };
 
 

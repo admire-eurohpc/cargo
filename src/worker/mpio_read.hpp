@@ -38,7 +38,7 @@ class mpio_read : public operation {
 
 public:
     mpio_read(mpi::communicator workers, std::filesystem::path input_path,
-              std::filesystem::path output_path, std::uint64_t block_size);
+              std::filesystem::path output_path, std::uint64_t block_size, FSPlugin::type fs_type);
 
     cargo::error_code
     operator()() final;
@@ -50,11 +50,11 @@ public:
     progress(int ongoing_index ) final;
 
 private:
+
     mpi::communicator m_workers;
     std::filesystem::path m_input_path;
     std::filesystem::path m_output_path;
     cargo::error_code m_status;
-    
     
     std::unique_ptr<posix_file::file> m_output_file;
     int m_workers_size;
@@ -63,6 +63,7 @@ private:
     memory_buffer m_buffer;
     std::vector<buffer_region> m_buffer_regions;
     std::uint64_t m_kb_size;
+    FSPlugin::type m_fs_type;
     
 };
 

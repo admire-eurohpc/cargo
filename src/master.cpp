@@ -50,18 +50,18 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
     if(input.supports_parallel_transfer()) {
         return std::make_tuple(static_cast<int>(cargo::tag::pread),
                                cargo::transfer_message{tid, seqno, input.path(),
-                                                       output.path()});
+                                                       output.path(), static_cast<uint32_t>(output.get_type())});
     }
 
     if(output.supports_parallel_transfer()) {
         return std::make_tuple(static_cast<int>(cargo::tag::pwrite),
                                cargo::transfer_message{tid, seqno, input.path(),
-                                                       output.path()});
+                                                       output.path(), static_cast<uint32_t>(input.get_type())});
     }
 
     return std::make_tuple(
             static_cast<int>(cargo::tag::sequential),
-            cargo::transfer_message{tid, seqno, input.path(), output.path()});
+            cargo::transfer_message{tid, seqno, input.path(), output.path(), static_cast<uint32_t>(input.get_type())});
 }
 
 } // namespace
@@ -303,12 +303,12 @@ master_server::transfer_datasets(const network::request& req,
                     const auto& s = v_s_new[i];
                     const auto& d = v_d_new[i];
 
-                    // Create the directory if it does not exist
-                    if(!std::filesystem::path(d.path()).parent_path().empty()) {
+                    // Create the directory if it does not exist (only in parallel transfer)
+                    if(!std::filesystem::path(d.path()).parent_path().empty() and d.supports_parallel_transfer()) {
                         std::filesystem::create_directories(
                                 std::filesystem::path(d.path()).parent_path());
                     }
-
+                
                     for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
                         const auto [t, m] = make_message(r.tid(), i, s, d);
                         LOGGER_INFO("msg <= to: {} body: {}", rank, m);

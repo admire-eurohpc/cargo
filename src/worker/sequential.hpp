@@ -35,9 +35,9 @@ class seq_operation : public operation {
 
 public:
     seq_operation(mpi::communicator comm, std::filesystem::path input_path,
-                  std::filesystem::path output_path, std::uint64_t block_size)
+                  std::filesystem::path output_path, std::uint64_t block_size, FSPlugin::type fs_type)
         : m_comm(std::move(comm)), m_input_path(std::move(input_path)),
-          m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
+          m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)), m_fs_type(fs_type) {}
 
     cargo::error_code
     operator()() final;
@@ -53,6 +53,7 @@ private:
     std::filesystem::path m_output_path;
     cargo::error_code m_status;
     std::uint64_t m_kb_size;
+    FSPlugin::type m_fs_type;
 };
 
 } // namespace cargo

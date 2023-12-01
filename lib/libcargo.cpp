@@ -77,6 +77,11 @@ dataset::path(std::string path) {
     m_path = std::move(path);
 };
 
+dataset::type
+dataset::get_type() const {
+    return m_type;
+};
+
 bool
 dataset::supports_parallel_transfer() const noexcept {
     return m_type == dataset::type::parallel;

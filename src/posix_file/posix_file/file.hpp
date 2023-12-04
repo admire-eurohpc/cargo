@@ -300,11 +300,11 @@ open(const std::filesystem::path& filepath, int flags, ::mode_t mode,
     if(flags & O_CREAT) {
         fs_plugin->mkdir(filepath.parent_path().c_str(), 0755);
     }
-    std::cout << "Opening file " << filepath << std::endl;
+    
     int fd = fs_plugin->open(filepath.c_str(), flags, mode);
-    std::cout << "File opened? " << fd << " -- " << flags << " mode: " << mode << std::endl;
+    
     if(fd == -1) {
-        throw io_error("posix_file::open_gekko", errno);
+        throw io_error("posix_file::open ", errno);
     }
 
     return file{filepath, fd, std::move(fs_plugin)};

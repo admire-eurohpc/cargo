@@ -7,7 +7,6 @@
 namespace cargo {
 
 posix_plugin::posix_plugin() {
-    std::cout << "POSIXPlugin::POSIXPlugin()" << std::endl;
 }
 
 

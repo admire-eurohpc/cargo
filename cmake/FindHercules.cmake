@@ -27,39 +27,39 @@
 ################################################################################
 
 
-find_path(GekkoFS_INCLUDE_DIR
+find_path(Hercules_INCLUDE_DIR
   NAMES user_functions.hpp
-  PREFIX gkfs
+  PREFIX hercules
 )
 
-find_library(GekkoFS_LIBRARY
-  NAMES libgkfs_user_lib.so
+find_library(Hercules_LIBRARY
+  NAMES libhercules_user_lib.so
 )
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
-	GekkoFS
+	Hercules
 	DEFAULT_MSG
-	GekkoFS_INCLUDE_DIR
-	GekkoFS_LIBRARY
+	Hercules_INCLUDE_DIR
+	Hercules_LIBRARY
 )
 
-if(GekkoFS_FOUND)
-  set(GekkoFS_LIBRARIES ${GekkoFS_LIBRARY})
-  set(GekkoFS_INCLUDE_DIRS ${GekkoFS_INCLUDE_DIR})
+if(Hercules_FOUND)
+  set(Hercules_LIBRARIES ${Hercules_LIBRARY})
+  set(Hercules_INCLUDE_DIRS ${Hercules_INCLUDE_DIR})
 
 
-  if(NOT TARGET GekkoFS::GekkoFS)
-	  add_library(GekkoFS::GekkoFS UNKNOWN IMPORTED)
-	  set_target_properties(GekkoFS::GekkoFS PROPERTIES
-		IMPORTED_LOCATION "${GekkoFS_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES "${GekkoFS_INCLUDE_DIR}"
+  if(NOT TARGET Hercules::Hercules)
+	  add_library(Hercules::Hercules UNKNOWN IMPORTED)
+	  set_target_properties(Hercules::Hercules PROPERTIES
+		IMPORTED_LOCATION "${Hercules_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES "${Hercules_INCLUDE_DIR}"
 	  )
 	endif()
 endif()
 
 
 mark_as_advanced(
-	GekkoFS_INCLUDE_DIR
-	GekkoFS_LIBRARY
+	Hercules_INCLUDE_DIR
+	Hercules_LIBRARY
 )

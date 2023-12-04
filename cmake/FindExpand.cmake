@@ -27,39 +27,39 @@
 ################################################################################
 
 
-find_path(GekkoFS_INCLUDE_DIR
+find_path(Expand_INCLUDE_DIR
   NAMES user_functions.hpp
   PREFIX gkfs
 )
 
-find_library(GekkoFS_LIBRARY
-  NAMES libgkfs_user_lib.so
+find_library(Expand_LIBRARY
+  NAMES libexpand_user_lib.so
 )
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
-	GekkoFS
+	Expand
 	DEFAULT_MSG
-	GekkoFS_INCLUDE_DIR
-	GekkoFS_LIBRARY
+	Expand_INCLUDE_DIR
+	Expand_LIBRARY
 )
 
-if(GekkoFS_FOUND)
-  set(GekkoFS_LIBRARIES ${GekkoFS_LIBRARY})
-  set(GekkoFS_INCLUDE_DIRS ${GekkoFS_INCLUDE_DIR})
+if(Expand_FOUND)
+  set(Expand_LIBRARIES ${Expand_LIBRARY})
+  set(Expand_INCLUDE_DIRS ${Expand_INCLUDE_DIR})
 
 
-  if(NOT TARGET GekkoFS::GekkoFS)
-	  add_library(GekkoFS::GekkoFS UNKNOWN IMPORTED)
-	  set_target_properties(GekkoFS::GekkoFS PROPERTIES
-		IMPORTED_LOCATION "${GekkoFS_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES "${GekkoFS_INCLUDE_DIR}"
+  if(NOT TARGET Expand::Expand)
+	  add_library(Expand::Expand UNKNOWN IMPORTED)
+	  set_target_properties(Expand::Expand PROPERTIES
+		IMPORTED_LOCATION "${Expand_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES "${Expand_INCLUDE_DIR}"
 	  )
 	endif()
 endif()
 
 
 mark_as_advanced(
-	GekkoFS_INCLUDE_DIR
-	GekkoFS_LIBRARY
+	Expand_INCLUDE_DIR
+	Expand_LIBRARY
 )

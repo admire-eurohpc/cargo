@@ -264,7 +264,23 @@ FetchContent_MakeAvailable(expected)
 find_package(GekkoFS)
 if (GekkoFS_FOUND)
   add_compile_definitions(GEKKOFS_PLUGIN)
+  message(STATUS "[${PROJECT_NAME}] Found GekkoFS")
 endif()
+
+### Hercules: Optional for hercules
+find_package(Hercules)
+if (Hercules_FOUND)
+  add_compile_definitions(HERCULES_PLUGIN)
+  message(STATUS "[${PROJECT_NAME}] Found Hercules")
+endif()
+
+### Expand: Optional for expand
+find_package(Expand)
+if (Expand_FOUND)
+  add_compile_definitions(EXPAND_PLUGIN)
+  message(STATUS "[${PROJECT_NAME}] Found Expand")
+endif()
+
 ### Threads: required by ASIO
 find_package(Threads REQUIRED)
 

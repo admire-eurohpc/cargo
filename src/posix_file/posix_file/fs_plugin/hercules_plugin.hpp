@@ -1,15 +1,15 @@
 
-#ifndef GEKKO_PLUGIN_HPP
-#define GEKKO_PLUGIN_HPP
+#ifndef HERCULES_PLUGIN_HPP
+#define HERCULES_PLUGIN_HPP
 
 #include "fs_plugin.hpp"
 
 namespace cargo {
-class gekko_plugin : public FSPlugin {
+class hercules_plugin : public FSPlugin {
 
 public:
-    gekko_plugin();
-    ~gekko_plugin();
+    hercules_plugin();
+    ~hercules_plugin();
     int
     open(const std::string& path, int flags, unsigned int mode) final;
     bool
@@ -22,10 +22,9 @@ public:
     mkdir(const std::string& path, mode_t mode) final;
     off_t
     lseek(int fd, off_t offset, int whence) final;
-    // Fallocate is not needed in GekkoFS as pwrite takes care of it.
     off_t
     fallocate(int fd, int mode, off_t offset, off_t len) final;
 };
 }; // namespace cargo
 
-#endif // GEKKO_PLUGIN_HPP
+#endif // HERCULES_PLUGIN_HPP

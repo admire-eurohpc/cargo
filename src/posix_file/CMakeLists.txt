@@ -26,8 +26,16 @@ add_library(posix_file STATIC)
 set(GEKKO_INCLUDES "")
 
 if (GEKKOFS_PLUGIN)
-   set(GEKKO_INCLUDES posix_file/fs_plugin/gekko_plugin.cpp posix_file/fs_plugin/gekko_plugin.cpp)           
+   set(GEKKO_INCLUDES posix_file/fs_plugin/gekko_plugin.hpp posix_file/fs_plugin/gekko_plugin.cpp)           
 endif()
+if (EXPAND_plugin)
+   set(EXPAND_INCLUDES posix_file/fs_plugin/expand_plugin.hpp posix_file/fs_plugin/expand_plugin.cpp)
+endif()
+if (HERCULES_plugin)
+   set(HERCULES_INCLUDES posix_file/fs_plugin/hercules_plugin.chpp posix_file/fs_plugin/hercules_plugin.cpp)
+endif()
+
+
 target_sources(
   posix_file
   PRIVATE posix_file/types.hpp
@@ -42,6 +50,8 @@ target_sources(
             posix_file/fs_plugin/fs_plugin.cpp
             posix_file/fs_plugin/posix_plugin.cpp
             ${GEKKO_INCLUDES}
+            ${HERCULES_INCLUDES}
+            ${EXPAND_INCLUDES}
             
 )
 
@@ -52,8 +62,17 @@ set_property(TARGET posix_file PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(ADHOC "")
 
 if (GEKKOFS_PLUGIN)
-set(ADHOC ${$ADHOC} GekkoFS::GekkoFS)
+   set(ADHOC ${ADHOC} GekkoFS::GekkoFS)
 endif()
+
+if (EXPAND_PLUGIN)
+   set(ADHOC ${ADHOC} Expand::Expand)
+endif()
+
+if (HERCULES_PLUGIN)
+   set(ADHOC ${ADHOC} Hercules::Hercules)
+endif()
+
 
 target_link_libraries(posix_file INTERFACE fmt::fmt tl::expected PRIVATE ${ADHOC})
 

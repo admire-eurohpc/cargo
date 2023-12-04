@@ -42,7 +42,8 @@ public:
     static std::unique_ptr<operation>
     make_operation(cargo::tag t, boost::mpi::communicator workers,
                    std::filesystem::path input_path,
-                   std::filesystem::path output_path, std::uint64_t block_size, FSPlugin::type fs_type);
+                   std::filesystem::path output_path, std::uint64_t block_size,
+                   FSPlugin::type fs_i_type, FSPlugin::type fs_o_type);
 
     virtual ~operation() = default;
 

@@ -6,6 +6,9 @@
 #ifdef HERCULES_PLUGIN
 #include "hercules_plugin.hpp"
 #endif
+#ifdef EXPAND_PLUGIN
+#include "expand_plugin.hpp"
+#endif
 
 namespace cargo {
 

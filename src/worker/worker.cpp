@@ -162,7 +162,8 @@ worker::run() {
                         make_pair(m.input_path(), m.output_path()),
                         make_pair(operation::make_operation(
                                           t, workers, m.input_path(),
-                                          m.output_path(), m_block_size, m.type()),
+                                          m.output_path(), m_block_size,
+                                          m.i_type(), m.o_type()),
                                   0)));
 
                 const auto op =

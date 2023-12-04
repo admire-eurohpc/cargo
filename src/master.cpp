@@ -48,20 +48,29 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
              const cargo::dataset& input, const cargo::dataset& output) {
 
     if(input.supports_parallel_transfer()) {
-        return std::make_tuple(static_cast<int>(cargo::tag::pread),
-                               cargo::transfer_message{tid, seqno, input.path(),
-                                                       output.path(), static_cast<uint32_t>(output.get_type())});
+        return std::make_tuple(
+                static_cast<int>(cargo::tag::pread),
+                cargo::transfer_message{
+                        tid, seqno, input.path(),
+                        static_cast<uint32_t>(input.get_type()), output.path(),
+                        static_cast<uint32_t>(output.get_type())});
     }
 
     if(output.supports_parallel_transfer()) {
-        return std::make_tuple(static_cast<int>(cargo::tag::pwrite),
-                               cargo::transfer_message{tid, seqno, input.path(),
-                                                       output.path(), static_cast<uint32_t>(input.get_type())});
+        return std::make_tuple(
+                static_cast<int>(cargo::tag::pwrite),
+                cargo::transfer_message{
+                        tid, seqno, input.path(),
+                        static_cast<uint32_t>(input.get_type()), output.path(),
+                        static_cast<uint32_t>(output.get_type())});
     }
 
     return std::make_tuple(
             static_cast<int>(cargo::tag::sequential),
-            cargo::transfer_message{tid, seqno, input.path(), output.path(), static_cast<uint32_t>(input.get_type())});
+            cargo::transfer_message{tid, seqno, input.path(),
+                                    static_cast<uint32_t>(input.get_type()),
+                                    output.path(),
+                                    static_cast<uint32_t>(input.get_type())});
 }
 
 } // namespace
@@ -71,10 +80,11 @@ using namespace std::literals;
 namespace cargo {
 
 master_server::master_server(std::string name, std::string address,
-                             bool daemonize, std::filesystem::path rundir, std::uint64_t block_size,
+                             bool daemonize, std::filesystem::path rundir,
+                             std::uint64_t block_size,
                              std::optional<std::filesystem::path> pidfile)
-    : server(std::move(name), std::move(address), daemonize, std::move(rundir), std::move(block_size),
-             std::move(pidfile)),
+    : server(std::move(name), std::move(address), daemonize, std::move(rundir),
+             std::move(block_size), std::move(pidfile)),
       provider(m_network_engine, 0),
       m_mpi_listener_ess(thallium::xstream::create()),
       m_mpi_listener_ult(m_mpi_listener_ess->make_thread(
@@ -122,7 +132,7 @@ master_server::mpi_listener_ult() {
                 status_message m;
                 world.recv(msg->source(), msg->tag(), m);
                 LOGGER_DEBUG("msg => from: {} body: {{payload: {}}}",
-                            msg->source(), m);
+                             msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
                                          m.state(), m.bw(), m.error_code());
@@ -239,12 +249,12 @@ master_server::transfer_datasets(const network::request& req,
         // Then create a new message for each file and append the
         // file to the d prefix
         // We will asume that the path is the original absolute
-        // The prefix selects the method of transfer 
+        // The prefix selects the method of transfer
         // And if not specified then we will use none
         // i.e. ("xxxx:/xyyy/bbb -> gekko:/cccc/ttt ) then
         // bbb/xxx -> ttt/xxx
         const auto& p = s.path();
-        
+
         std::vector<std::filesystem::path> files;
         if(std::filesystem::is_directory(p)) {
             LOGGER_INFO("Expanding input directory {}", p);
@@ -269,7 +279,7 @@ master_server::transfer_datasets(const network::request& req,
                 // path (d.path) plus the path from f, removing the
                 // initial path p (taking care of the trailing /)
                 auto leading = p.size();
-                if(leading>0 and p.back() == '/') {
+                if(leading > 0 and p.back() == '/') {
                     leading--;
                 }
 
@@ -303,12 +313,16 @@ master_server::transfer_datasets(const network::request& req,
                     const auto& s = v_s_new[i];
                     const auto& d = v_d_new[i];
 
-                    // Create the directory if it does not exist (only in parallel transfer)
-                    if(!std::filesystem::path(d.path()).parent_path().empty() and d.supports_parallel_transfer()) {
+                    // Create the directory if it does not exist (only in
+                    // parallel transfer)
+                    if(!std::filesystem::path(d.path())
+                                .parent_path()
+                                .empty() and
+                       d.supports_parallel_transfer()) {
                         std::filesystem::create_directories(
                                 std::filesystem::path(d.path()).parent_path());
                     }
-                
+
                     for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
                         const auto [t, m] = make_message(r.tid(), i, s, d);
                         LOGGER_INFO("msg <= to: {} body: {}", rank, m);

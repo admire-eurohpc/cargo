@@ -69,7 +69,7 @@ mpio_write::operator()() {
         }
 
         m_input_file = std::make_unique<posix_file::file>(
-                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_type));
+                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
 
         m_workers_size = workers_size;
         m_workers_rank = workers_rank;

@@ -40,6 +40,7 @@ enum class tag : int {
     pread,
     pwrite,
     sequential,
+    seq_mixed,
     bw_shaping,
     status,
     shutdown

@@ -66,7 +66,7 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
     }
 
     return std::make_tuple(
-            static_cast<int>(cargo::tag::sequential),
+            static_cast<int>(cargo::tag::seq_mixed),
             cargo::transfer_message{tid, seqno, input.path(),
                                     static_cast<uint32_t>(input.get_type()),
                                     output.path(),
@@ -123,7 +123,7 @@ master_server::mpi_listener_ult() {
         auto msg = world.iprobe();
 
         if(!msg) {
-            thallium::thread::self().sleep(m_network_engine, 150);
+            thallium::thread::self().sleep(m_network_engine, 10);
             continue;
         }
 

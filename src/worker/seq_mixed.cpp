@@ -23,13 +23,13 @@
  *****************************************************************************/
 
 #include <logger/logger.hpp>
-#include "sequential.hpp"
+#include "seq_mixed.hpp"
 #include <thread>
 
 namespace cargo {
 
 cargo::error_code
-seq_operation::operator()() {
+seq_mixed_operation::operator()() {
     using posix_file::views::all_of;
     using posix_file::views::as_blocks;
     using posix_file::views::strided;
@@ -69,6 +69,11 @@ seq_operation::operator()() {
         m_input_file = std::make_unique<posix_file::file>(
                 posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
 
+          m_output_file = std::make_unique<posix_file::file>(posix_file::create(
+            m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));
+
+    m_output_file->fallocate(0, 0, file_size);
+
         m_workers_size = workers_size;
         m_workers_rank = workers_rank;
         m_block_size = block_size;
@@ -93,12 +98,12 @@ seq_operation::operator()() {
 }
 
 cargo::error_code
-seq_operation::progress() const {
+seq_mixed_operation::progress() const {
     return m_status;
 }
 
 int
-seq_operation::progress(int ongoing_index) {
+seq_mixed_operation::progress(int ongoing_index) {
     using posix_file::views::all_of;
     using posix_file::views::as_blocks;
     using posix_file::views::strided;
@@ -136,6 +141,10 @@ seq_operation::progress(int ongoing_index) {
                              fmt::join(buffer_regions[index].end() - 10,
                                        buffer_regions[index].end(), ""));
 
+/* Do write */
+                m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
+                                  file_range.size());
+
 
                 m_bytes_per_rank += n;
                 // Do sleep
@@ -169,70 +178,6 @@ seq_operation::progress(int ongoing_index) {
             m_status = error_code::other;
             return -1;
         }
-    }
-    write = true;
-    // We finished reading
-    // step3. POSIX write data
-    // We need to create the directory if it does not exists (using
-    // FSPlugin)
-
-    if ( write and ongoing_index == 0 ) {
-        m_output_file = std::make_unique<posix_file::file>(posix_file::create(
-                m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));
-
-        m_output_file->fallocate(0, 0, m_file_size);
-    }
-
-    try {
-        int index = 0;
-        m_status = error_code::transfer_in_progress;
-        for(const auto& file_range :
-            all_of(posix_file::file{m_input_path}) | as_blocks(m_block_size) |
-                    strided(m_workers_size, m_workers_rank)) {
-            if(index < ongoing_index) {
-                ++index;
-                continue;
-            } else {
-                if(index > ongoing_index) {
-                    return index;
-                }
-            }
-
-            assert(m_buffer_regions[index].size() >= file_range.size());
-            auto start = std::chrono::steady_clock::now();
-            m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
-                                  file_range.size());
-            // Do sleep
-            std::this_thread::sleep_for(sleep_value());
-            auto end = std::chrono::steady_clock::now();
-            // Send transfer bw
-            double elapsed_seconds =
-                    std::chrono::duration_cast<std::chrono::duration<double>>(
-                            end - start)
-                            .count();
-            if((elapsed_seconds) > 0) {
-                bw((m_block_size / (1024.0 * 1024.0)) / (elapsed_seconds));
-                LOGGER_DEBUG(
-                        "BW (write) Update: {} / {} = {} mb/s [ Sleep {} ]",
-                        m_block_size / 1024.0, elapsed_seconds, bw(),
-                        sleep_value());
-            }
-
-            ++index;
-        }
-
-    } catch(const posix_file::io_error& e) {
-        LOGGER_ERROR("{}() failed: {}", e.where(), e.what());
-        m_status = make_system_error(e.error_code());
-        return -1;
-    } catch(const std::system_error& e) {
-        LOGGER_ERROR("Unexpected system error: {}", e.what());
-        m_status = make_system_error(e.code().value());
-        return -1;
-    } catch(const std::exception& e) {
-        LOGGER_ERROR("Unexpected exception: {}", e.what());
-        m_status = error_code::other;
-        return -1;
     }
 
     m_status = error_code::success;

@@ -77,7 +77,8 @@ parse_command_line(int argc, char* argv[]) {
     app.add_option("--if", cfg.input_flags,
                    "Flags for input datasets. Accepted values\n"
                    "  - posix: read data using POSIX (default)\n"
-                   "  - mpio: read data using MPI-IO")
+                   "  - parallel: read data using MPI-IO\n"
+                   "  - gekkofs: read data using gekkofs user library\n")
             ->option_text("FLAGS")
             ->transform(CLI::CheckedTransformer(dataset_flags_map,
                                                 CLI::ignore_case));
@@ -85,7 +86,8 @@ parse_command_line(int argc, char* argv[]) {
     app.add_option("--of", cfg.output_flags,
                    "Flags for output datasets. Accepted values\n"
                    "  - posix: write data using POSIX (default)\n"
-                   "  - mpio: write data using MPI-IO")
+                   "  - parallel: write data using MPI-IO\n"
+                   "  - gekkofs: write data using gekkofs user library\n")
             ->option_text("FLAGS")
             ->transform(CLI::CheckedTransformer(dataset_flags_map,
                                                 CLI::ignore_case));

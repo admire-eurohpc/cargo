@@ -154,6 +154,8 @@ worker::run() {
                 [[fallthrough]];
             case tag::pwrite:
                 [[fallthrough]];
+            case tag::seq_mixed:
+                [[fallthrough]];
             case tag::sequential: {
                 transfer_message m;
                 world.recv(msg->source(), msg->tag(), m);

@@ -26,6 +26,7 @@
 #include "mpio_read.hpp"
 #include "mpio_write.hpp"
 #include "sequential.hpp"
+#include "seq_mixed.hpp"
 
 namespace mpi = boost::mpi;
 
@@ -49,6 +50,10 @@ operation::make_operation(cargo::tag t, mpi::communicator workers,
                     std::move(output_path), block_size, fs_i_type, fs_o_type);
         case tag::sequential:
             return std::make_unique<seq_operation>(
+                    std::move(workers), std::move(input_path),
+                    std::move(output_path), block_size, fs_i_type, fs_o_type);
+        case tag::seq_mixed:
+            return std::make_unique<seq_mixed_operation>(
                     std::move(workers), std::move(input_path),
                     std::move(output_path), block_size, fs_i_type, fs_o_type);
         default:

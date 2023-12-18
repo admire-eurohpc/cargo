@@ -32,6 +32,7 @@
 #include <optional>
 #include "cargo.hpp"
 #include "boost_serialization_std_optional.hpp"
+#include "posix_file/file.hpp"
 
 namespace cargo {
 
@@ -39,6 +40,7 @@ enum class tag : int {
     pread,
     pwrite,
     sequential,
+    seq_mixed,
     bw_shaping,
     status,
     shutdown
@@ -52,9 +54,11 @@ public:
     transfer_message() = default;
 
     transfer_message(std::uint64_t tid, std::uint32_t seqno,
-                     std::string input_path, std::string output_path)
+                     std::string input_path, std::uint32_t i_type,
+                     std::string output_path, std::uint32_t o_type)
         : m_tid(tid), m_seqno(seqno), m_input_path(std::move(input_path)),
-          m_output_path(std::move(output_path)) {}
+          m_i_type(i_type), m_output_path(std::move(output_path)),
+          m_o_type(o_type) {}
 
     [[nodiscard]] std::uint64_t
     tid() const {
@@ -75,6 +79,17 @@ public:
     output_path() const {
         return m_output_path;
     }
+    /* Enum is converted from cargo::dataset::type to cargo::FSPlugin::type */
+    [[nodiscard]] cargo::FSPlugin::type
+    o_type() const {
+        return static_cast<cargo::FSPlugin::type>(m_o_type);
+    }
+
+    /* Enum is converted from cargo::dataset::type to cargo::FSPlugin::type */
+    [[nodiscard]] cargo::FSPlugin::type
+    i_type() const {
+        return static_cast<cargo::FSPlugin::type>(m_i_type);
+    }
 
 private:
     template <class Archive>
@@ -86,12 +101,16 @@ private:
         ar& m_seqno;
         ar& m_input_path;
         ar& m_output_path;
+        ar& m_i_type;
+        ar& m_o_type;
     }
 
     std::uint64_t m_tid{};
     std::uint32_t m_seqno{};
     std::string m_input_path;
+    std::uint32_t m_i_type{};
     std::string m_output_path;
+    std::uint32_t m_o_type{};
 };
 
 class status_message {

@@ -22,8 +22,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef CARGO_WORKER_SEQUENTIAL_HPP
-#define CARGO_WORKER_SEQUENTIAL_HPP
+#ifndef CARGO_WORKER_SEQ_MIXED_HPP
+#define CARGO_WORKER_SEQ_MIXED_HPP
 
 #include "ops.hpp"
 #include <posix_file/file.hpp>
@@ -35,10 +35,10 @@ namespace mpi = boost::mpi;
 
 namespace cargo {
 
-class seq_operation : public operation {
+class seq_mixed_operation : public operation {
 
 public:
-    seq_operation(mpi::communicator workers, std::filesystem::path input_path,
+    seq_mixed_operation(mpi::communicator workers, std::filesystem::path input_path,
                   std::filesystem::path output_path, std::uint64_t block_size,
                   FSPlugin::type fs_i_type, FSPlugin::type fs_o_type)
         : m_workers(std::move(workers)), m_input_path(std::move(input_path)),

@@ -31,7 +31,9 @@
 #include <utility>
 #include <fcntl.h>
 #include <tl/expected.hpp>
-
+#include "fs_plugin/fs_plugin.hpp"
+#include "cargo.hpp"
+#include <iostream>
 extern "C" {
 #include <unistd.h>
 };
@@ -151,12 +153,20 @@ private:
 
 class file {
 
+
 public:
+    file(cargo::FSPlugin::type t) {
+        m_fs_plugin = cargo::FSPlugin::make_fs(t);
+    };
+
     explicit file(std::filesystem::path filepath) noexcept
         : m_path(std::move(filepath)) {}
 
-    file(std::filesystem::path filepath, int fd) noexcept
-        : m_path(std::move(filepath)), m_handle(fd) {}
+    file(std::filesystem::path filepath, int fd,
+         std::unique_ptr<cargo::FSPlugin> fs_plugin) noexcept
+        : m_path(std::move(filepath)), m_handle(fd),
+          m_fs_plugin(std::move(fs_plugin)) {}
+
 
     std::filesystem::path
     path() const noexcept {
@@ -182,23 +192,14 @@ public:
     fallocate(int mode, offset offset, std::size_t len) const {
 
         if(!m_handle) {
-            throw io_error("posix_file::file::fallocate", EBADF);
+            throw io_error("posix_file::file::fallocate (handle)", EBADF);
         }
 
-        int ret = ::fallocate(m_handle.native(), mode, offset,
+        int ret = m_fs_plugin->fallocate(m_handle.native(), mode, offset,
                               static_cast<off_t>(len));
 
         if(ret == -1) {
-            // Try an alternative to fallocate for beegfs
-            if(errno == EOPNOTSUPP) {
-                ret = ::posix_fallocate(m_handle.native(), offset,
-                                        static_cast<off_t>(len));
-                if (ret == -1) {
-                    throw io_error("posix_file::file::posix_fallocate", errno);
-                } else return;
-            }
             throw io_error("posix_file::file::fallocate", errno);
-            
         }
     }
 
@@ -217,8 +218,9 @@ public:
 
         while(bytes_read < size) {
 
-            ssize_t n = ::pread(m_handle.native(), buf.data() + bytes_read,
-                                bytes_left, offset + bytes_read);
+            ssize_t n = m_fs_plugin->pread(m_handle.native(),
+                                           buf.data() + bytes_read, bytes_left,
+                                           offset + bytes_read);
 
             if(n == 0) {
                 // EOF
@@ -257,8 +259,9 @@ public:
 
         while(bytes_written < size) {
 
-            ssize_t n = ::pwrite(m_handle.native(), buf.data() + bytes_written,
-                                 bytes_left, offset + bytes_written);
+            ssize_t n = m_fs_plugin->pwrite(m_handle.native(),
+                                            buf.data() + bytes_written,
+                                            bytes_left, offset + bytes_written);
 
             if(n == -1) {
                 // Interrupted by a signal, retry
@@ -277,26 +280,40 @@ public:
         return bytes_written;
     }
 
+
 protected:
     const std::filesystem::path m_path;
     file_handle m_handle;
+    std::unique_ptr<cargo::FSPlugin> m_fs_plugin;
 };
 
+
 static inline file
-open(const std::filesystem::path& filepath, int flags, ::mode_t mode = 0) {
+open(const std::filesystem::path& filepath, int flags, ::mode_t mode,
+     cargo::FSPlugin::type t) {
 
-    int fd = ::open(filepath.c_str(), flags, mode);
+    std::unique_ptr<cargo::FSPlugin> fs_plugin;
 
+    fs_plugin = cargo::FSPlugin::make_fs(t);
+    // We don't check if it exists, we just create it if flags is set to O_CREAT
+
+    if(flags & O_CREAT) {
+        fs_plugin->mkdir(filepath.parent_path().c_str(), 0755);
+    }
+    
+    int fd = fs_plugin->open(filepath.c_str(), flags, mode);
+    
     if(fd == -1) {
-        throw io_error("posix_file::open", errno);
+        throw io_error("posix_file::open ", errno);
     }
 
-    return file{filepath, fd};
+    return file{filepath, fd, std::move(fs_plugin)};
 }
 
 static inline file
-create(const std::filesystem::path& filepath, int flags, ::mode_t mode) {
-    return open(filepath, O_CREAT | flags, mode);
+create(const std::filesystem::path& filepath, int flags, ::mode_t mode,
+       cargo::FSPlugin::type t) {
+    return open(filepath, O_CREAT | flags, mode, t);
 }
 
 } // namespace posix_file

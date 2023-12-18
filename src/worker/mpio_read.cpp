@@ -32,9 +32,12 @@ namespace cargo {
 
 mpio_read::mpio_read(mpi::communicator workers,
                      std::filesystem::path input_path,
-                     std::filesystem::path output_path, std::uint64_t block_size)
+                     std::filesystem::path output_path,
+                     std::uint64_t block_size, FSPlugin::type fs_i_type,
+                     FSPlugin::type fs_o_type)
     : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
-      m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)) {}
+      m_output_path(std::move(output_path)), m_kb_size(std::move(block_size)),
+      m_fs_i_type(fs_i_type), m_fs_o_type(fs_o_type) {}
 
 cargo::error_code
 mpio_read::operator()() {
@@ -122,8 +125,10 @@ mpio_read::operator()() {
         }
 
         // step3. POSIX write data
-        m_output_file = std::make_unique<posix_file::file>(
-                posix_file::create(m_output_path, O_WRONLY, S_IRUSR | S_IWUSR));
+        // We need to create the directory if it does not exists (using
+        // FSPlugin)
+        m_output_file = std::make_unique<posix_file::file>(posix_file::create(
+                m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));
 
         m_output_file->fallocate(0, 0, file_size);
 
@@ -179,6 +184,8 @@ mpio_read::progress(int ongoing_index) {
             auto start = std::chrono::steady_clock::now();
             m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
                                   file_range.size());
+            // Do sleep
+            std::this_thread::sleep_for(sleep_value());
             auto end = std::chrono::steady_clock::now();
             // Send transfer bw
             double elapsed_seconds =
@@ -192,8 +199,6 @@ mpio_read::progress(int ongoing_index) {
                         m_block_size / 1024.0, elapsed_seconds, bw(),
                         sleep_value());
             }
-            // Do sleep
-            std::this_thread::sleep_for(sleep_value());
 
             ++index;
         }

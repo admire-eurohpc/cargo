@@ -43,6 +43,8 @@ target_sources(
           worker/ops.hpp
           worker/sequential.cpp
           worker/sequential.hpp
+          worker/seq_mixed.cpp
+          worker/seq_mixed.hpp
           worker/worker.cpp
           worker/worker.hpp
           env.hpp

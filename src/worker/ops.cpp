@@ -26,6 +26,7 @@
 #include "mpio_read.hpp"
 #include "mpio_write.hpp"
 #include "sequential.hpp"
+#include "seq_mixed.hpp"
 
 namespace mpi = boost::mpi;
 
@@ -34,21 +35,27 @@ namespace cargo {
 std::unique_ptr<operation>
 operation::make_operation(cargo::tag t, mpi::communicator workers,
                           std::filesystem::path input_path,
-                          std::filesystem::path output_path, std::uint64_t block_size) {
+                          std::filesystem::path output_path,
+                          std::uint64_t block_size, FSPlugin::type fs_i_type,
+                          FSPlugin::type fs_o_type) {
     using cargo::tag;
     switch(t) {
         case tag::pread:
-            return std::make_unique<mpio_read>(std::move(workers),
-                                               std::move(input_path),
-                                               std::move(output_path), block_size);
+            return std::make_unique<mpio_read>(
+                    std::move(workers), std::move(input_path),
+                    std::move(output_path), block_size, fs_i_type, fs_o_type);
         case tag::pwrite:
-            return std::make_unique<mpio_write>(std::move(workers),
-                                                std::move(input_path),
-                                                std::move(output_path), block_size);
+            return std::make_unique<mpio_write>(
+                    std::move(workers), std::move(input_path),
+                    std::move(output_path), block_size, fs_i_type, fs_o_type);
         case tag::sequential:
-            return std::make_unique<seq_operation>(std::move(workers),
-                                                   std::move(input_path),
-                                                   std::move(output_path), block_size);
+            return std::make_unique<seq_operation>(
+                    std::move(workers), std::move(input_path),
+                    std::move(output_path), block_size, fs_i_type, fs_o_type);
+        case tag::seq_mixed:
+            return std::make_unique<seq_mixed_operation>(
+                    std::move(workers), std::move(input_path),
+                    std::move(output_path), block_size, fs_i_type, fs_o_type);
         default:
             return {};
     }
@@ -90,7 +97,8 @@ operation::bw() {
     return m_bw;
 }
 
-void operation::bw(float_t bw) {
+void
+operation::bw(float_t bw) {
     m_bw = bw;
 }
 void

@@ -38,7 +38,8 @@ class mpio_read : public operation {
 
 public:
     mpio_read(mpi::communicator workers, std::filesystem::path input_path,
-              std::filesystem::path output_path, std::uint64_t block_size);
+              std::filesystem::path output_path, std::uint64_t block_size,
+              FSPlugin::type fs_i_type, FSPlugin::type m_fs_o_type);
 
     cargo::error_code
     operator()() final;
@@ -47,15 +48,14 @@ public:
     progress() const final;
 
     int
-    progress(int ongoing_index ) final;
+    progress(int ongoing_index) final;
 
 private:
     mpi::communicator m_workers;
     std::filesystem::path m_input_path;
     std::filesystem::path m_output_path;
     cargo::error_code m_status;
-    
-    
+
     std::unique_ptr<posix_file::file> m_output_file;
     int m_workers_size;
     int m_workers_rank;
@@ -63,7 +63,8 @@ private:
     memory_buffer m_buffer;
     std::vector<buffer_region> m_buffer_regions;
     std::uint64_t m_kb_size;
-    
+    FSPlugin::type m_fs_i_type;
+    FSPlugin::type m_fs_o_type;
 };
 
 } // namespace cargo

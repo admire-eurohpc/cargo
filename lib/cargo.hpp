@@ -126,6 +126,15 @@ public:
 
 
     /**
+     * @brief Get all the statuses of the associated transfer.
+     * 
+     * @return std::vector<transfer_status> 
+     */
+    [[nodiscard]] std::vector<transfer_status>
+    statuses() const;
+
+
+    /**
      * @brief updates the bw control of the transfer
      * 
      * @param bw_control 
@@ -164,10 +173,22 @@ class transfer_status {
 
     friend transfer_status
     transfer::status() const;
+    
 
     transfer_status(transfer_state status, float bw, error_code error) noexcept;
 
 public:
+
+    transfer_status(std::string name, transfer_state status, float bw, error_code error) noexcept;
+    
+    /**
+     * Get the name of the associated dataset.
+     *
+     * @return The name of the dataset.
+     */
+    [[nodiscard]] std::string
+    name() const noexcept;
+
     /**
      * Get the current status of the associated transfer.
      *
@@ -207,10 +228,13 @@ public:
     bw() const;
 
 private:
+    std::string m_name;
     transfer_state m_state;
     float m_bw;
     error_code m_error;
 };
+
+
 
 /**
  * Request the transfer of a dataset collection.

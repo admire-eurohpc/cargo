@@ -69,10 +69,10 @@ seq_mixed_operation::operator()() {
         m_input_file = std::make_unique<posix_file::file>(
                 posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
 
-          m_output_file = std::make_unique<posix_file::file>(posix_file::create(
-            m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));
+        m_output_file = std::make_unique<posix_file::file>(posix_file::create(
+                m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));
 
-    m_output_file->fallocate(0, 0, file_size);
+        m_output_file->fallocate(0, 0, file_size);
 
         m_workers_size = workers_size;
         m_workers_rank = workers_rank;
@@ -141,9 +141,9 @@ seq_mixed_operation::progress(int ongoing_index) {
                              fmt::join(buffer_regions[index].end() - 10,
                                        buffer_regions[index].end(), ""));
 
-/* Do write */
-                m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
-                                  file_range.size());
+                /* Do write */
+                m_output_file->pwrite(m_buffer_regions[index],
+                                      file_range.offset(), file_range.size());
 
 
                 m_bytes_per_rank += n;
@@ -183,6 +183,5 @@ seq_mixed_operation::progress(int ongoing_index) {
     m_status = error_code::success;
     return -1;
 }
-
 
 } // namespace cargo

@@ -239,5 +239,4 @@ seq_operation::progress(int ongoing_index) {
     return -1;
 }
 
-
 } // namespace cargo

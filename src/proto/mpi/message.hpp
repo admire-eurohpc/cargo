@@ -120,10 +120,10 @@ class status_message {
 public:
     status_message() = default;
 
-    status_message(std::uint64_t tid, std::uint32_t seqno,
+    status_message(std::uint64_t tid, std::uint32_t seqno, std::string name, 
                    cargo::transfer_state state, float bw,
                    std::optional<cargo::error_code> error_code = std::nullopt)
-        : m_tid(tid), m_seqno(seqno), m_state(state), m_bw(bw),
+        : m_tid(tid), m_seqno(seqno), m_name(name), m_state(state), m_bw(bw),
           m_error_code(error_code) {}
 
     [[nodiscard]] std::uint64_t
@@ -134,6 +134,11 @@ public:
     [[nodiscard]] std::uint32_t
     seqno() const {
         return m_seqno;
+    }
+
+    [[nodiscard]] const std::string&
+    name() const {
+        return m_name;
     }
 
     [[nodiscard]] cargo::transfer_state
@@ -160,6 +165,7 @@ private:
 
         ar& m_tid;
         ar& m_seqno;
+        ar& m_name;
         ar& m_state;
         ar& m_bw;
         ar& m_error_code;
@@ -167,6 +173,7 @@ private:
 
     std::uint64_t m_tid{};
     std::uint32_t m_seqno{};
+    std::string m_name{};
     cargo::transfer_state m_state{};
     float m_bw{};
     std::optional<cargo::error_code> m_error_code{};

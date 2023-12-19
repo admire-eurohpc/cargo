@@ -39,6 +39,7 @@ operation::make_operation(cargo::tag t, mpi::communicator workers,
                           std::uint64_t block_size, FSPlugin::type fs_i_type,
                           FSPlugin::type fs_o_type) {
     using cargo::tag;
+
     switch(t) {
         case tag::pread:
             return std::make_unique<mpio_read>(
@@ -113,6 +114,17 @@ operation::set_comm(int rank, std::uint64_t tid, std::uint32_t seqno,
 cargo::error_code
 operation::progress() const {
     return error_code::other;
+}
+
+
+std::string
+operation::output_path() {
+    return m_output_path;
+}
+
+std::string
+operation::input_path() {
+    return m_input_path;
 }
 
 } // namespace cargo

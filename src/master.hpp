@@ -58,6 +58,9 @@ private:
     void
     transfer_status(const network::request& req, std::uint64_t tid);
 
+    void
+    transfer_statuses(const network::request& req, std::uint64_t tid);
+
     // Receives a request to increase or decrease BW 
     // -1 faster, 0 , +1 slower
     void

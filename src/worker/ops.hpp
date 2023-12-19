@@ -78,6 +78,13 @@ public:
     void
     bw(float_t bw);
 
+    std::string
+    output_path();
+
+    std::string
+    input_path();
+
+
 private:
     std::int16_t m_sleep_value = 0;
     int m_rank;
@@ -85,6 +92,8 @@ private:
     std::uint32_t m_seqno;
     cargo::tag m_t;
     float m_bw;
+    std::filesystem::path m_input_path;
+    std::filesystem::path m_output_path;
 };
 
 } // namespace cargo

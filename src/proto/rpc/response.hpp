@@ -110,9 +110,8 @@ using status_response =
                             Error>;
 
 template <typename Name, typename Status, typename Bw, typename Error>
-using statuses_response =
-        response_with_value<std::vector< std::tuple<Name, Status, Bw, std::optional<Error> > >,
-                            Error>;
+using statuses_response = response_with_value<
+        std::vector<std::tuple<Name, Status, Bw, std::optional<Error>>>, Error>;
 
 } // namespace cargo::proto
 

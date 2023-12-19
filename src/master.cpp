@@ -96,6 +96,7 @@ master_server::master_server(std::string name, std::string address,
     provider::define(EXPAND(transfer_datasets));
     provider::define(EXPAND(transfer_status));
     provider::define(EXPAND(bw_control));
+    provider::define(EXPAND(transfer_statuses));
 
 #undef EXPAND
 
@@ -135,7 +136,8 @@ master_server::mpi_listener_ult() {
                              msg->source(), m);
 
                 m_request_manager.update(m.tid(), m.seqno(), msg->source() - 1,
-                                         m.state(), m.bw(), m.error_code());
+                                         m.name(), m.state(), m.bw(),
+                                         m.error_code());
                 break;
             }
 
@@ -364,6 +366,54 @@ master_server::transfer_status(const network::request& req, std::uint64_t tid) {
                 req.respond(response_type{
                         rpc.id(), error_code::success,
                         std::make_tuple(rs.state(), rs.bw(), rs.error())});
+            });
+}
+
+
+void
+master_server::transfer_statuses(const network::request& req,
+                                 std::uint64_t tid) {
+
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+    using proto::statuses_response;
+
+    using response_type = statuses_response<std::string, cargo::transfer_state,
+                                            float, cargo::error_code>;
+
+    mpi::communicator world;
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    LOGGER_INFO("rpc {:>} body: {{tid: {}}}", rpc, tid);
+    // Get all the statuses of the associated transfer. returns a vector
+    // of transfer_status objects
+
+    m_request_manager.lookup_all(tid)
+            .or_else([&](auto&& ec) {
+                LOGGER_ERROR("Failed to lookup request: {}", ec);
+                LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, ec);
+                req.respond(generic_response{rpc.id(), ec});
+            })
+            .map([&](auto&& rs) {
+                // We get a vector of request_status objects, we need to
+                // convert them to a vector of tuples with the same
+                // informations
+                std::vector<std::tuple<std::string, cargo::transfer_state,
+                                       float, std::optional<cargo::error_code>>>
+                        v{};
+                for(auto& r : rs) {
+                    v.push_back(std::make_tuple(r.name(), r.state(), r.bw(),
+                                                r.error().value()));
+                    LOGGER_INFO(
+                            "rpc {:<} body: {{retval: {}, name: {}, status: {}}}",
+                            rpc, error_code::success, r.name(), r.state());
+                }
+                // Generate a response type with the vector of tuples and
+                // respond
+
+
+                req.respond(response_type{rpc.id(), error_code::success, v});
             });
 }
 

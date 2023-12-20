@@ -47,7 +47,8 @@ parallel_request::nworkers() const {
 }
 
 request_status::request_status(part_status s)
-    : m_name(s.name()), m_state(s.state()), m_bw(s.bw()), m_error_code(s.error()) {}
+    : m_name(s.name()), m_state(s.state()), m_bw(s.bw()),
+      m_error_code(s.error()) {}
 
 request_status::request_status(std::string name, transfer_state s, float bw,
                                std::optional<error_code> ec)
@@ -72,6 +73,12 @@ float
 request_status::bw() const {
     return m_bw;
 }
+
+void
+request_status::bw(float bw) {
+    m_bw = bw;
+}
+
 std::string
 part_status::name() const {
     return m_name;
@@ -95,7 +102,7 @@ part_status::error() const {
 void
 part_status::update(std::string name, transfer_state s, float bw,
                     std::optional<error_code> ec) noexcept {
-    m_name = std::move(name);
+    m_name = name;
     m_state = s;
     m_bw = bw;
     m_error_code = ec;

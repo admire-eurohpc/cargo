@@ -109,13 +109,20 @@ request_manager::lookup_all(std::uint64_t tid) {
     if(const auto it = m_requests.find(tid); it != m_requests.end()) {
 
         const auto& file_statuses = it->second;
-
+        // we calculate always the mean of the BW
         for(const auto& fs : file_statuses) {
+            float bw = 0;
+            request_status rs(*fs.begin());
             for(const auto& ps : fs) {
-
-                request_status rs{ps};
-                result.push_back(rs);
+                bw += ps.bw();
+                if(ps.state() == transfer_state::completed) {
+                    continue;
+                }
+                // not finished
+                rs = request_status{ps};
             }
+            rs.bw(bw/(double)fs.size());
+            result.push_back(rs);
         }
         return result;
     }

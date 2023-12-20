@@ -309,7 +309,6 @@ master_server::transfer_datasets(const network::request& req,
             .map([&](auto&& r) {
                 assert(v_s_new.size() == v_d_new.size());
 
-
                 // For all the files
                 for(std::size_t i = 0; i < v_s_new.size(); ++i) {
                     const auto& s = v_s_new[i];
@@ -404,7 +403,7 @@ master_server::transfer_statuses(const network::request& req,
                         v{};
                 for(auto& r : rs) {
                     v.push_back(std::make_tuple(r.name(), r.state(), r.bw(),
-                                                r.error().value()));
+                                                r.error()));
                     LOGGER_INFO(
                             "rpc {:<} body: {{retval: {}, name: {}, status: {}}}",
                             rpc, error_code::success, r.name(), r.state());

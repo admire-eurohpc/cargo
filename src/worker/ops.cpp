@@ -116,15 +116,4 @@ operation::progress() const {
     return error_code::other;
 }
 
-
-std::string
-operation::output_path() {
-    return m_output_path;
-}
-
-std::string
-operation::input_path() {
-    return m_input_path;
-}
-
 } // namespace cargo

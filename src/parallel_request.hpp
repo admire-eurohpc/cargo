@@ -29,7 +29,7 @@
 #include <vector>
 #include <optional>
 #include <fmt/format.h>
-
+#include "../lib/cargo.hpp"
 namespace cargo {
 
 class dataset;
@@ -106,6 +106,9 @@ public:
     [[nodiscard]] float
     bw() const;
 
+    void
+    bw (float bw);
+    
 private:
     std::string m_name;
     transfer_state m_state{transfer_state::pending};

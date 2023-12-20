@@ -78,11 +78,11 @@ public:
     void
     bw(float_t bw);
 
-    std::string
-    output_path();
+    virtual std::string
+    output_path() const = 0;
 
-    std::string
-    input_path();
+    virtual std::string
+    input_path() const = 0;
 
 
 private:
@@ -92,8 +92,6 @@ private:
     std::uint32_t m_seqno;
     cargo::tag m_t;
     float m_bw;
-    std::filesystem::path m_input_path;
-    std::filesystem::path m_output_path;
 };
 
 } // namespace cargo

@@ -38,9 +38,11 @@ namespace cargo {
 class seq_mixed_operation : public operation {
 
 public:
-    seq_mixed_operation(mpi::communicator workers, std::filesystem::path input_path,
-                  std::filesystem::path output_path, std::uint64_t block_size,
-                  FSPlugin::type fs_i_type, FSPlugin::type fs_o_type)
+    seq_mixed_operation(mpi::communicator workers,
+                        std::filesystem::path input_path,
+                        std::filesystem::path output_path,
+                        std::uint64_t block_size, FSPlugin::type fs_i_type,
+                        FSPlugin::type fs_o_type)
         : m_workers(std::move(workers)), m_input_path(std::move(input_path)),
           m_output_path(std::move(output_path)),
           m_kb_size(std::move(block_size)), m_fs_i_type(fs_i_type),
@@ -54,11 +56,20 @@ public:
     int
     progress(int ongoing_index) final;
 
+    std::string
+    output_path() const {
+        return m_output_path;
+    }
+
+    std::string
+    input_path() const {
+        return m_input_path;
+    }
+
 private:
     mpi::communicator m_workers;
-    std::filesystem::path m_input_path;
-    std::filesystem::path m_output_path;
-
+    std::filesystem::path m_input_path{};
+    std::filesystem::path m_output_path{};
     std::unique_ptr<posix_file::file> m_input_file;
     std::unique_ptr<posix_file::file> m_output_file;
     int m_workers_size;

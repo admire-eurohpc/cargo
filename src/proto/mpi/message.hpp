@@ -253,13 +253,13 @@ struct fmt::formatter<cargo::status_message> : formatter<std::string_view> {
         const auto str =
                 s.error_code()
                         ? fmt::format(
-                                  "{{tid: {}, seqno: {}, state: {}, bw: {}, "
+                                  "{{tid: {}, seqno: {}, name: {}, state: {}, bw: {}, "
                                   "error_code: {}}}",
-                                  s.tid(), s.seqno(), s.state(), s.bw(),
+                                  s.tid(), s.seqno(), s.name(), s.state(), s.bw(),
                                   *s.error_code())
                         : fmt::format(
-                                  "{{tid: {}, seqno: {}, state: {}, bw: {}}}",
-                                  s.tid(), s.seqno(), s.state(), s.bw());
+                                  "{{tid: {}, seqno: {}, name: {}, state: {}, bw: {}}}",
+                                  s.tid(), s.seqno(), s.name(), s.state(), s.bw());
         return formatter<std::string_view>::format(str, ctx);
     }
 };

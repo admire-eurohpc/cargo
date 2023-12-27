@@ -185,9 +185,13 @@ There are a few utility command line programs that can be used to interact with 
 cli/ccp --server ofi+tcp://127.0.0.1:62000 --input /directory/subdir --output /directorydst/subdirdst --if <method> --of <method> 
 ```
 `--input` and `--output` are required arguments, and can be a directory or a file path.
-`--if` and `--of`select the specific transfer method, on V0.3.2 there are only to possibilities:
+`--if` and `--of`select the specific transfer method, on V0.4.0 there are many combinations:
 
-`--if mpio`  (It will read in parallel from i.e. lustre using MPI, and write using posix calls.)
-`--of mpio`  (It will read using posix calls, and write using MPI (i.e. to lustre))
+`--if or --of` can be: posix, gekkofs, hercules, dataclay, expand and parallel (for MPIIO requests, but only one side is allowed).
+
+Typically you should use posix or parallel and then one specialized adhocfs. Posix is also able to be used with LD_PRELOAD, however
+higher performance and flexibility can be obtained using the specific configuration.
+
+On the other hand, MPIIO (parallel) uses normally file locking so there is a performance imapact, and posix is faster (we supose no external modifications are done).
 
 Other commands are `ping`, `shutdown` and `shaping` (for bw control).

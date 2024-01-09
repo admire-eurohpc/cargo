@@ -27,7 +27,7 @@ class Cargo(CMakePackage):
     """A parallel data stager for malleable applications."""
 
     homepage = "https://storage.bsc.es/gitlab/hpc/cargo"
-    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.3.3/cargo-v0.3.3.tar.bz2"
+    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.3.4/cargo-v0.3.4.tar.bz2"
     git = "https://storage.bsc.es/gitlab/hpc/cargo.git"
 
     maintainers("alberto-miranda")
@@ -35,11 +35,11 @@ class Cargo(CMakePackage):
     # available versions
     version("latest", branch="main")
     version("0.1.0", sha256="981d00adefbc2ea530f57f8428bd7980e4aab2993a86d8ae4274334c8f055bdb", deprecated=True)
-    version("0.2.0", sha256="fd7fa31891b3961dcb376556ec5fa028bf512d96a7c688a160f9dade58dae36f")
-    version("0.3.1", sha256="613485354e24c4b97cb6d045657569f94dc1d9bbb391b5a166f8d18b3595428b")
-    version("0.3.2", sha256="ceb6bcb738a35fb41f40b7b1cdd8a806d99995a227980e8ced61dd90418e5960")
-    version("0.3.3", sha256="1c4ab215e41905cc359894fa1df9006be16730ddc37c5b1369a9ea759bcb61cd")
-    
+    version("0.2.0", sha256="fd7fa31891b3961dcb376556ec5fa028bf512d96a7c688a160f9dade58dae36f", deprecated=True)
+    version("0.3.1", sha256="613485354e24c4b97cb6d045657569f94dc1d9bbb391b5a166f8d18b3595428b", deprecated=True)
+    version("0.3.2", sha256="ceb6bcb738a35fb41f40b7b1cdd8a806d99995a227980e8ced61dd90418e5960", deprecated=True)
+    version("0.3.3", sha256="1c4ab215e41905cc359894fa1df9006be16730ddc37c5b1369a9ea759bcb61cd", deprecated=True)
+    version("0.3.4", sha256="42b740fb7e82c49d73dfb6caf7549876f72913afb75996c6558e956ea63de3da")
     # build variants
     variant('build_type',
             default='Release',

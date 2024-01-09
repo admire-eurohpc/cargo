@@ -56,7 +56,7 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
 }
 
 error_code
-request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
+request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid, std::string name, 
                         transfer_state s, float bw,
                         std::optional<error_code> ec) {
 
@@ -65,7 +65,7 @@ request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
     if(const auto it = m_requests.find(tid); it != m_requests.end()) {
         assert(seqno < it->second.size());
         assert(wid < it->second[seqno].size());
-        it->second[seqno][wid].update(s, bw, ec);
+        it->second[seqno][wid].update(name, s, bw, ec);
         return error_code::success;
     }
 
@@ -92,8 +92,39 @@ request_manager::lookup(std::uint64_t tid) {
                 return request_status{ps};
             }
         }
+    // TODO : completed should have the name of the file if its not found 
+        return request_status{"", transfer_state::completed, 0.0f};
+    }
 
-        return request_status{transfer_state::completed, 0.0f};
+    LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
+    return tl::make_unexpected(error_code::no_such_transfer);
+}
+
+tl::expected<std::vector<request_status>, error_code>
+request_manager::lookup_all(std::uint64_t tid) {
+
+    abt::shared_lock lock(m_mutex);
+
+    std::vector<request_status> result;
+    if(const auto it = m_requests.find(tid); it != m_requests.end()) {
+
+        const auto& file_statuses = it->second;
+        // we calculate always the mean of the BW
+        for(const auto& fs : file_statuses) {
+            float bw = 0;
+            request_status rs(*fs.begin());
+            for(const auto& ps : fs) {
+                bw += ps.bw();
+                if(ps.state() == transfer_state::completed) {
+                    continue;
+                }
+                // not finished
+                rs = request_status{ps};
+            }
+            rs.bw(bw/(double)fs.size());
+            result.push_back(rs);
+        }
+        return result;
     }
 
     LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);

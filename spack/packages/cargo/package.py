@@ -39,7 +39,7 @@ class Cargo(CMakePackage):
     version("0.3.1", sha256="613485354e24c4b97cb6d045657569f94dc1d9bbb391b5a166f8d18b3595428b")
     version("0.3.2", sha256="ceb6bcb738a35fb41f40b7b1cdd8a806d99995a227980e8ced61dd90418e5960")
     version("0.3.3", sha256="1c4ab215e41905cc359894fa1df9006be16730ddc37c5b1369a9ea759bcb61cd")
-    version("0.3.4", branch="rnou/fallocate")
+    
     # build variants
     variant('build_type',
             default='Release',

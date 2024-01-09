@@ -54,13 +54,22 @@ public:
     int
     progress(int ongoing_index) final;
 
+    std::string
+    output_path() const {
+        return m_output_path;
+    }
+
+    std::string
+    input_path() const {
+        return m_input_path;
+    }
+
 private:
     mpi::communicator m_workers;
-    std::filesystem::path m_input_path;
-    std::filesystem::path m_output_path;
-
     std::unique_ptr<posix_file::file> m_input_file;
     std::unique_ptr<posix_file::file> m_output_file;
+    std::filesystem::path m_input_path{};
+    std::filesystem::path m_output_path{};
     int m_workers_size;
     int m_workers_rank;
     std::size_t m_block_size;

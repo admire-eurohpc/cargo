@@ -39,6 +39,7 @@ operation::make_operation(cargo::tag t, mpi::communicator workers,
                           std::uint64_t block_size, FSPlugin::type fs_i_type,
                           FSPlugin::type fs_o_type) {
     using cargo::tag;
+
     switch(t) {
         case tag::pread:
             return std::make_unique<mpio_read>(

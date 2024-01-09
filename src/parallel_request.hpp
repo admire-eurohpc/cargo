@@ -29,7 +29,7 @@
 #include <vector>
 #include <optional>
 #include <fmt/format.h>
-
+#include "../lib/cargo.hpp"
 namespace cargo {
 
 class dataset;
@@ -65,6 +65,9 @@ class part_status {
 public:
     part_status() = default;
 
+    [[nodiscard]] std::string
+    name() const;
+
     [[nodiscard]] transfer_state
     state() const;
 
@@ -75,9 +78,10 @@ public:
     bw() const;
 
     void
-    update(transfer_state s, float bw, std::optional<error_code> ec) noexcept;
+    update(std::string name, transfer_state s, float bw, std::optional<error_code> ec) noexcept;
 
 private:
+    std::string m_name;
     transfer_state m_state{transfer_state::pending};
     float m_bw;
     std::optional<error_code> m_error_code{};
@@ -86,9 +90,12 @@ private:
 class request_status {
 public:
     request_status() = default;
-    explicit request_status(transfer_state s, float bw,
+    explicit request_status(std::string name, transfer_state s, float bw,
                             std::optional<error_code> ec = {});
     explicit request_status(part_status s);
+
+    [[nodiscard]] std::string
+    name() const;
 
     [[nodiscard]] transfer_state
     state() const;
@@ -99,7 +106,11 @@ public:
     [[nodiscard]] float
     bw() const;
 
+    void
+    bw (float bw);
+    
 private:
+    std::string m_name;
     transfer_state m_state{transfer_state::pending};
     float m_bw;
     std::optional<error_code> m_error_code{};

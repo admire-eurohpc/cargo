@@ -78,6 +78,13 @@ public:
     void
     bw(float_t bw);
 
+    virtual std::string
+    output_path() const = 0;
+
+    virtual std::string
+    input_path() const = 0;
+
+
 private:
     std::int16_t m_sleep_value = 0;
     int m_rank;

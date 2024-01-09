@@ -109,6 +109,10 @@ using status_response =
         response_with_value<std::tuple<Status, Bw, std::optional<Error>>,
                             Error>;
 
+template <typename Name, typename Status, typename Bw, typename Error>
+using statuses_response = response_with_value<
+        std::vector<std::tuple<Name, Status, Bw, std::optional<Error>>>, Error>;
+
 } // namespace cargo::proto
 
 #endif // CARGO_PROTO_RPC_RESPONSE_HPP

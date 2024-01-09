@@ -53,11 +53,11 @@ make_communicator(const mpi::communicator& comm, const mpi::group& group,
 
 void
 update_state(int rank, std::uint64_t tid, std::uint32_t seqno,
-             cargo::transfer_state st, float bw,
+             std::string name, cargo::transfer_state st, float bw,
              std::optional<cargo::error_code> ec = std::nullopt) {
 
     mpi::communicator world;
-    const cargo::status_message m{tid, seqno, st, bw, ec};
+    const cargo::status_message m{tid, seqno, name, st, bw, ec};
     LOGGER_DEBUG("msg <= to: {} body: {{payload: {}}}", rank, m);
     world.send(rank, static_cast<int>(cargo::tag::status), m);
 }
@@ -119,7 +119,7 @@ worker::run() {
                 if(index == -1) {
                     // operation finished
                     cargo::error_code ec = op->progress();
-                    update_state(op->source(), op->tid(), op->seqno(),
+                    update_state(op->source(), op->tid(), op->seqno(), op->output_path(),
                                  ec ? transfer_state::failed
                                     : transfer_state::completed,
                                  0.0f, ec);
@@ -129,7 +129,7 @@ worker::run() {
                 } else {
                     // update only if BW is set
                     if(op->bw() > 0.0f) {
-                        update_state(op->source(), op->tid(), op->seqno(),
+                        update_state(op->source(), op->tid(), op->seqno(), op->output_path(),
                                      transfer_state::running, op->bw());
                     }
                     I->second.second = index;
@@ -144,7 +144,7 @@ worker::run() {
         if(!msg) {
             // Only wait if there are no pending operations and no messages
             if(m_ops.size() == 0) {
-                std::this_thread::sleep_for(150ms);
+                std::this_thread::sleep_for(10ms);
             }
             continue;
         }
@@ -174,13 +174,13 @@ worker::run() {
 
                 op->set_comm(msg->source(), m.tid(), m.seqno(), t);
 
-                update_state(op->source(), op->tid(), op->seqno(),
+                update_state(op->source(), op->tid(), op->seqno(), op->output_path(),
                              transfer_state::running, -1.0f);
                 // Different scenarios read -> write | write -> read
 
                 cargo::error_code ec = (*op)();
                 if(ec != cargo::error_code::transfer_in_progress) {
-                    update_state(op->source(), op->tid(), op->seqno(),
+                    update_state(op->source(), op->tid(), op->seqno(), op->output_path(),
                                  transfer_state::failed, -1.0f, ec);
                     m_ops.erase(make_pair(m.input_path(), m.output_path()));
                 }

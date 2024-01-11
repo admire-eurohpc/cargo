@@ -25,13 +25,13 @@
 add_library(posix_file STATIC)
 set(GEKKO_INCLUDES "")
 
-if (GEKKOFS_PLUGIN)
+if (GekkoFS_FOUND)
    set(GEKKO_INCLUDES posix_file/fs_plugin/gekko_plugin.hpp posix_file/fs_plugin/gekko_plugin.cpp)           
 endif()
-if (EXPAND_plugin)
+if (Expand_FOUND)
    set(EXPAND_INCLUDES posix_file/fs_plugin/expand_plugin.hpp posix_file/fs_plugin/expand_plugin.cpp)
 endif()
-if (HERCULES_plugin)
+if (Hercules_FOUND)
    set(HERCULES_INCLUDES posix_file/fs_plugin/hercules_plugin.chpp posix_file/fs_plugin/hercules_plugin.cpp)
 endif()
 
@@ -61,15 +61,15 @@ target_include_directories(posix_file INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET posix_file PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(ADHOC "")
 
-if (GEKKOFS_PLUGIN)
+if (GekkoFS_FOUND)
    set(ADHOC ${ADHOC} GekkoFS::GekkoFS)
 endif()
 
-if (EXPAND_PLUGIN)
+if (Expand_FOUND)
    set(ADHOC ${ADHOC} Expand::Expand)
 endif()
 
-if (HERCULES_PLUGIN)
+if (Hercules_FOUND)
    set(ADHOC ${ADHOC} Hercules::Hercules)
 endif()
 

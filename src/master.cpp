@@ -124,7 +124,8 @@ master_server::mpi_listener_ult() {
         auto msg = world.iprobe();
 
         if(!msg) {
-            thallium::thread::self().sleep(m_network_engine, 10);
+            std::this_thread::sleep_for(10ms);
+            //thallium::thread::self().sleep(m_network_engine, 10);
             continue;
         }
 

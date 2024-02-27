@@ -88,7 +88,12 @@ master_server::master_server(std::string name, std::string address,
       provider(m_network_engine, 0),
       m_mpi_listener_ess(thallium::xstream::create()),
       m_mpi_listener_ult(m_mpi_listener_ess->make_thread(
-              [this]() { mpi_listener_ult(); })) {
+              [this]() { mpi_listener_ult(); })),
+      m_ftio_listener_ess(thallium::xstream::create()),
+      m_ftio_listener_ult(m_ftio_listener_ess->make_thread(
+              [this]() { ftio_scheduling_ult(); }))
+
+{
 
 #define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
     provider::define(EXPAND(ping));
@@ -97,6 +102,7 @@ master_server::master_server(std::string name, std::string address,
     provider::define(EXPAND(transfer_status));
     provider::define(EXPAND(bw_control));
     provider::define(EXPAND(transfer_statuses));
+    provider::define(EXPAND(ftio_int));
 
 #undef EXPAND
 
@@ -110,6 +116,10 @@ master_server::master_server(std::string name, std::string address,
         m_mpi_listener_ult = thallium::managed<thallium::thread>{};
         m_mpi_listener_ess->join();
         m_mpi_listener_ess = thallium::managed<thallium::xstream>{};
+        m_ftio_listener_ult->join();
+        m_ftio_listener_ult = thallium::managed<thallium::thread>{};
+        m_ftio_listener_ess->join();
+        m_ftio_listener_ess = thallium::managed<thallium::xstream>{};
     });
 }
 
@@ -125,7 +135,7 @@ master_server::mpi_listener_ult() {
 
         if(!msg) {
             std::this_thread::sleep_for(10ms);
-            //thallium::thread::self().sleep(m_network_engine, 10);
+            // thallium::thread::self().sleep(m_network_engine, 10);
             continue;
         }
 
@@ -161,6 +171,28 @@ master_server::mpi_listener_ult() {
     world.barrier();
 
     LOGGER_INFO("Exit");
+}
+
+
+void
+master_server::ftio_scheduling_ult() {
+
+
+    while(!m_shutting_down) {
+
+        std::this_thread::sleep_for(1000ms);
+        // thallium::thread::self().sleep(m_network_engine, 10);
+
+
+        // Do something with the confidence and probability
+        if (ftio_changed) {
+            ftio_changed = false;
+        LOGGER_INFO("Confidence is {}, probability is {}", confidence,
+                    probability);
+        }
+    }
+
+    LOGGER_INFO("Shutting down.");
 }
 
 #define RPC_NAME() (__FUNCTION__)
@@ -415,6 +447,37 @@ master_server::transfer_statuses(const network::request& req,
 
                 req.respond(response_type{rpc.id(), error_code::success, v});
             });
+}
+
+
+void
+master_server::ftio_int(const network::request& req, float conf,
+                        float prob) {
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+    mpi::communicator world;
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+
+    confidence = conf;
+    probability = prob;
+    ftio_changed = true;
+    LOGGER_INFO("rpc {:>} body: {{confidence: {}, probability: {}}}", rpc,
+                conf, prob);
+
+    // do the magic here
+
+    // 1. Update the confidence and probability values inside cargo
+
+    // Scheduling thread should be running and waiting for them
+
+    //
+
+    const auto resp = generic_response{rpc.id(), error_code::success};
+
+    LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
+
+    req.respond(resp);
 }
 
 } // namespace cargo

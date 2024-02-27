@@ -45,6 +45,9 @@ private:
     mpi_listener_ult();
 
     void
+    ftio_scheduling_ult();
+
+    void
     ping(const network::request& req);
 
     void
@@ -66,11 +69,23 @@ private:
     void
     bw_control(const network::request& req, std::uint64_t tid, std::int16_t shaping);
 
+
+    void 
+    ftio_int(const network::request& req, float confidence, float probability);
+
 private:
     // Dedicated execution stream for the MPI listener ULT
     thallium::managed<thallium::xstream> m_mpi_listener_ess;
     // ULT for the MPI listener
     thallium::managed<thallium::thread> m_mpi_listener_ult;
+    // Dedicated execution stream for the ftio scheduler
+    thallium::managed<thallium::xstream> m_ftio_listener_ess;
+    // ULT for the ftio scheduler
+    thallium::managed<thallium::thread> m_ftio_listener_ult;
+    // FTIO decision values (below 0, implies not used)
+    float confidence = -1.0f;
+    float probability = -1.0f;
+    bool ftio_changed = true;
     // Request manager
     request_manager m_request_manager;
 };

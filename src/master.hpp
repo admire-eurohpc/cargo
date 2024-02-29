@@ -71,7 +71,7 @@ private:
 
 
     void 
-    ftio_int(const network::request& req, float confidence, float probability);
+    ftio_int(const network::request& req, float confidence, float probability, float period);
 
 private:
     // Dedicated execution stream for the MPI listener ULT
@@ -83,9 +83,10 @@ private:
     // ULT for the ftio scheduler
     thallium::managed<thallium::thread> m_ftio_listener_ult;
     // FTIO decision values (below 0, implies not used)
-    float confidence = -1.0f;
-    float probability = -1.0f;
-    bool ftio_changed = true;
+    float m_confidence = -1.0f;
+    float m_probability = -1.0f;
+    float m_period = -1.0f;
+    bool m_ftio_changed = true;
     // Request manager
     request_manager m_request_manager;
 };

@@ -34,6 +34,7 @@ struct ftio_config {
     std::string server_address;
     float confidence;
     float probability;
+    float period;
 };
 
 ftio_config
@@ -56,6 +57,10 @@ parse_command_line(int argc, char* argv[]) {
     app.add_option("-p,--probability", cfg.probability, "probability")
             ->option_text("float")
             ->default_str("-1.0");
+
+    app.add_option("-t,--period", cfg.period, "period")
+            ->option_text("float")
+            ->required();
 
 
     try {
@@ -89,7 +94,7 @@ main(int argc, char* argv[]) {
 
         if(const auto result = rpc_client.lookup(address); result.has_value()) {
             const auto& endpoint = result.value();
-            const auto retval = endpoint.call("ftio_int", cfg.confidence, cfg.probability);
+            const auto retval = endpoint.call("ftio_int", cfg.confidence, cfg.probability, cfg.period);
 
             if(retval.has_value()) {
 

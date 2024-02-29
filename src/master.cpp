@@ -185,10 +185,10 @@ master_server::ftio_scheduling_ult() {
 
 
         // Do something with the confidence and probability
-        if (ftio_changed) {
-            ftio_changed = false;
-        LOGGER_INFO("Confidence is {}, probability is {}", confidence,
-                    probability);
+        if (m_ftio_changed) {
+            m_ftio_changed = false;
+        LOGGER_INFO("Confidence is {}, probability is {} and period is {}", m_confidence,
+                    m_probability, m_period);
         }
     }
 
@@ -452,18 +452,19 @@ master_server::transfer_statuses(const network::request& req,
 
 void
 master_server::ftio_int(const network::request& req, float conf,
-                        float prob) {
+                        float prob, float period) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
     mpi::communicator world;
     const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
 
-    confidence = conf;
-    probability = prob;
-    ftio_changed = true;
-    LOGGER_INFO("rpc {:>} body: {{confidence: {}, probability: {}}}", rpc,
-                conf, prob);
+    m_confidence = conf;
+    m_probability = prob;
+    m_period = period;
+    m_ftio_changed = true;
+    LOGGER_INFO("rpc {:>} body: {{confidence: {}, probability: {}, period: {}}}", rpc,
+                conf, prob, period);
 
     // do the magic here
 

@@ -2,6 +2,7 @@
 #define FS_PLUGIN_HPP
 
 #include <string>
+#include <vector>
 #include <filesystem>
 #include <utility>
 #include <fcntl.h>
@@ -36,6 +37,12 @@ public:
     lseek(int fd, off_t offset, int whence) = 0;
     virtual off_t
     fallocate(int fd, int mode, off_t offset, off_t len) = 0;
+    virtual std::vector<std::string>
+    readdir(const std::string& path) = 0;
+    virtual int
+    unlink(const std::string& path) = 0;
+    virtual int
+    stat(const std::string& path, struct stat* buf) = 0;
 };
 } // namespace cargo
 #endif // FS_PLUGIN_HPP

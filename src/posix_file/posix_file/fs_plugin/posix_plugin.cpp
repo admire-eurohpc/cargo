@@ -6,8 +6,7 @@
 
 namespace cargo {
 
-posix_plugin::posix_plugin() {
-}
+posix_plugin::posix_plugin() {}
 
 
 int
@@ -45,4 +44,27 @@ posix_plugin::fallocate(int fd, int mode, off_t offset, off_t len) {
     (void) mode;
     return ::posix_fallocate(fd, offset, static_cast<off_t>(len));
 }
+
+std::vector<std::string>
+posix_plugin::readdir(const std::string& path) {
+    std::vector<std::string> files;
+    for(const auto& f : std::filesystem::recursive_directory_iterator(path)) {
+        if(std::filesystem::is_regular_file(f)) {
+            files.push_back(f.path());
+        }
+    }
+    return files;
+}
+
+
+int
+posix_plugin::unlink(const std::string& path) {
+    return ::unlink(path.c_str());
+}
+int
+posix_plugin::stat(const std::string& path, struct stat* buf) {
+    return ::stat(path.c_str(), buf);
+}
+
+
 }; // namespace cargo

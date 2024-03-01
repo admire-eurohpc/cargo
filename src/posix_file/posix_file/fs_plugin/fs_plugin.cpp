@@ -17,6 +17,7 @@ FSPlugin::make_fs(type t) {
 
     switch(t) {
         case type::posix:
+        case type::parallel:
             return std::make_unique<cargo::posix_plugin>();
 #ifdef GEKKOFS_PLUGIN
         case type::gekkofs:

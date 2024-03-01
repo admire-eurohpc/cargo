@@ -66,7 +66,7 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
     }
 
     return std::make_tuple(
-            static_cast<int>(cargo::tag::seq_mixed),
+            static_cast<int>(cargo::tag::sequential),
             cargo::transfer_message{tid, seqno, input.path(),
                                     static_cast<uint32_t>(input.get_type()),
                                     output.path(),
@@ -290,15 +290,15 @@ master_server::transfer_datasets(const network::request& req,
         // bbb/xxx -> ttt/xxx
         const auto& p = s.path();
 
-        std::vector<std::filesystem::path> files;
-        if(std::filesystem::is_directory(p)) {
+        std::vector<std::string> files;
+        // Check stat of p using FSPlugin class      
+        auto fs = FSPlugin::make_fs(static_cast<cargo::FSPlugin::type>(s.get_type()));
+        struct stat buf;
+        fs->stat(p, &buf);
+        if(buf.st_mode & S_IFDIR) {
             LOGGER_INFO("Expanding input directory {}", p);
-            for(const auto& f :
-                std::filesystem::recursive_directory_iterator(p)) {
-                if(std::filesystem::is_regular_file(f)) {
-                    files.push_back(f.path());
-                }
-            }
+            files = fs->readdir(p);
+            
 
             /*
             We have all the files expanded. Now create a new
@@ -319,7 +319,7 @@ master_server::transfer_datasets(const network::request& req,
                 }
 
                 d_new.path(d.path() / std::filesystem::path(
-                                              f.string().substr(leading + 1)));
+                                              f.substr(leading + 1)));
 
                 LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
                              d_new.path());

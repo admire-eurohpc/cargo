@@ -7,14 +7,14 @@
 namespace cargo {
 gekko_plugin::gekko_plugin() {
     int result = gkfs_init();
-    if (result != 0) {
+    if(result != 0) {
         std::cerr << "Failed to initialize gekkofs" << std::endl;
-    }
+    } 
 }
 
 gekko_plugin::~gekko_plugin() {
     int result = gkfs_end();
-    if (result != 0) {
+    if(result != 0) {
         std::cerr << "Failed to finalize gekkofs" << std::endl;
     }
 }
@@ -62,4 +62,40 @@ gekko_plugin::fallocate(int fd, int mode, off_t offset, off_t len) {
     (void) len;
     return len;
 }
+
+int
+gekko_plugin::unlink(const std::string& path) {
+    return gkfs::syscall::gkfs_remove(path);
+}
+
+
+std::vector<std::string>
+gekko_plugin::readdir(const std::string& path) {
+    // Fill recursively the files, checking if the file is a directory
+    std::vector<std::string> files;
+    std::vector<std::string> final_list;
+    files = gkfs::syscall::gkfs_get_file_list(path);
+
+    for(auto& file : files) {
+        file = "/" + file;
+        struct stat buf;
+        stat(file, &buf);
+        if(S_ISDIR(buf.st_mode)) {
+            std::vector<std::string> subfiles = readdir(file);
+            final_list.insert(final_list.end(), subfiles.begin(),
+                              subfiles.end());
+        } else {
+            final_list.push_back(file);
+        }
+    }
+    return final_list;
+}
+
+// stat
+int
+gekko_plugin::stat(const std::string& path, struct stat* buf) {
+    return gkfs::syscall::gkfs_stat(path, buf);
+}
+
+
 } // namespace cargo

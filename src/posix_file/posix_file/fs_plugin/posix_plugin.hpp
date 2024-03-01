@@ -24,6 +24,14 @@ public:
     lseek(int fd, off_t offset, int whence) final;
     off_t
     fallocate(int fd, int mode, off_t offset, off_t len) final;
+    std::vector<std::string>
+    readdir(const std::string& path) final;
+    int
+    unlink(const std::string& path) final;
+    int
+    stat(const std::string& path, struct stat* buf) final;
+
+
 };
 } // namespace cargo
 #endif // POSIX_PLUGIN_HPP

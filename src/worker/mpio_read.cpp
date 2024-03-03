@@ -47,6 +47,7 @@ mpio_read::operator()() {
     using posix_file::views::strided;
     m_status = error_code::transfer_in_progress;
     try {
+        
         const auto input_file = mpioxx::file::open(
                 m_workers, m_input_path, mpioxx::file_open_mode::rdonly);
 
@@ -179,8 +180,10 @@ mpio_read::progress(int ongoing_index) {
                     return index;
                 }
             }
-
+            // LOG indexes and sizes
+        
             assert(m_buffer_regions[index].size() >= file_range.size());
+           
             auto start = std::chrono::steady_clock::now();
             m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
                                   file_range.size());
@@ -221,6 +224,7 @@ mpio_read::progress(int ongoing_index) {
     }
 
     m_status = error_code::success;
+    m_output_file->close();
     return -1;
 }
 

@@ -163,7 +163,7 @@ public:
         : m_path(std::move(filepath)) {}
 
     file(std::filesystem::path filepath, int fd,
-         std::unique_ptr<cargo::FSPlugin> fs_plugin) noexcept
+         std::shared_ptr<cargo::FSPlugin> fs_plugin) noexcept
         : m_path(std::move(filepath)), m_handle(fd),
           m_fs_plugin(std::move(fs_plugin)) {}
 
@@ -201,6 +201,11 @@ public:
         if(ret == -1) {
             throw io_error("posix_file::file::fallocate", errno);
         }
+    }
+
+    void
+    close() noexcept {
+        m_fs_plugin->close(m_handle.native());
     }
 
     template <typename MemoryBuffer>
@@ -284,7 +289,7 @@ public:
 protected:
     const std::filesystem::path m_path;
     file_handle m_handle;
-    std::unique_ptr<cargo::FSPlugin> m_fs_plugin;
+    std::shared_ptr<cargo::FSPlugin> m_fs_plugin;
 };
 
 
@@ -292,7 +297,7 @@ static inline file
 open(const std::filesystem::path& filepath, int flags, ::mode_t mode,
      cargo::FSPlugin::type t) {
 
-    std::unique_ptr<cargo::FSPlugin> fs_plugin;
+    std::shared_ptr<cargo::FSPlugin> fs_plugin;
 
     fs_plugin = cargo::FSPlugin::make_fs(t);
     // We don't check if it exists, we just create it if flags is set to O_CREAT

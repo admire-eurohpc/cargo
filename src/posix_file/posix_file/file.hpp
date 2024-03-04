@@ -155,7 +155,7 @@ class file {
 
 
 public:
-    file(cargo::FSPlugin::type t) {
+    explicit file(cargo::FSPlugin::type t) {
         m_fs_plugin = cargo::FSPlugin::make_fs(t);
     };
 
@@ -196,7 +196,7 @@ public:
         }
 
         int ret = m_fs_plugin->fallocate(m_handle.native(), mode, offset,
-                              static_cast<off_t>(len));
+                                         static_cast<off_t>(len));
 
         if(ret == -1) {
             throw io_error("posix_file::file::fallocate", errno);
@@ -305,9 +305,9 @@ open(const std::filesystem::path& filepath, int flags, ::mode_t mode,
     if(flags & O_CREAT) {
         fs_plugin->mkdir(filepath.parent_path().c_str(), 0755);
     }
-    
+
     int fd = fs_plugin->open(filepath.c_str(), flags, mode);
-    
+
     if(fd == -1) {
         throw io_error("posix_file::open ", errno);
     }

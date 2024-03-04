@@ -12,16 +12,24 @@
 
 namespace cargo {
 
-std::unique_ptr<FSPlugin>
+static std::shared_ptr<FSPlugin> m_fs_posix;
+static std::shared_ptr<FSPlugin> m_fs_gekkofs;
+
+std::shared_ptr<FSPlugin>
 FSPlugin::make_fs(type t) {
 
     switch(t) {
         case type::posix:
         case type::parallel:
-            return std::make_unique<cargo::posix_plugin>();
+            if(m_fs_posix == nullptr)
+                m_fs_posix = std::make_shared<cargo::posix_plugin>();
+            return m_fs_posix;
 #ifdef GEKKOFS_PLUGIN
         case type::gekkofs:
-            return std::make_unique<cargo::gekko_plugin>();
+            if(m_fs_gekkofs == nullptr)
+                m_fs_gekkofs = std::make_shared<cargo::gekko_plugin>();
+            return m_fs_gekkofs;
+
 #endif
 #ifdef HERCULES_PLUGIN
         case type::hercules:

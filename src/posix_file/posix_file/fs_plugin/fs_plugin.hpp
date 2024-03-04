@@ -19,7 +19,9 @@ public:
         expand,
         dataclay
     };
-    static std::unique_ptr<FSPlugin> make_fs(type);
+
+    static std::shared_ptr<FSPlugin> make_fs(type);
+    // One instance per fs type
 
     virtual ~FSPlugin() = default;
 

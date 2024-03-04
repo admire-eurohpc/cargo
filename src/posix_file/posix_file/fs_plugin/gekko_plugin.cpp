@@ -9,18 +9,14 @@ gekko_plugin::gekko_plugin() {
     int result = gkfs_init();
     if(result != 0) {
         std::cerr << "Failed to initialize gekkofs" << std::endl;
-    }  else {
-        std::cout << "Initialized gekkofs" << std::endl;
     }
 }
 
 gekko_plugin::~gekko_plugin() {
-    /*int result = gkfs_end();
+    int result = gkfs_end();
     if(result != 0) {
         std::cerr << "Failed to finalize gekkofs" << std::endl;
-    } else {
-        std::cout << "Finalized gekkofs" << std::endl;
-    }*/
+    }
 }
 // Override the open function
 int

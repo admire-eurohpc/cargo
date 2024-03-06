@@ -49,7 +49,7 @@ struct StringMaker<posix_file::ranges::range> {
 struct scoped_file : public posix_file::file {
 
     explicit scoped_file(std::filesystem::path filepath)
-        : posix_file::file(std::move(filepath)) {}
+        : posix_file::file(std::move(filepath), cargo::FSPlugin::type::posix) {}
 
     ~scoped_file() {
         remove();

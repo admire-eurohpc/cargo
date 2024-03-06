@@ -159,8 +159,9 @@ public:
         m_fs_plugin = cargo::FSPlugin::make_fs(t);
     };
 
-    explicit file(std::filesystem::path filepath) noexcept
-        : m_path(std::move(filepath)) {}
+    explicit file(std::filesystem::path filepath,
+                  cargo::FSPlugin::type t) noexcept
+        : m_path(std::move(filepath)), m_fs_plugin(cargo::FSPlugin::make_fs(t)) {}
 
     file(std::filesystem::path filepath, int fd,
          std::shared_ptr<cargo::FSPlugin> fs_plugin) noexcept

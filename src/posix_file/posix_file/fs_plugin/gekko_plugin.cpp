@@ -77,17 +77,24 @@ gekko_plugin::readdir(const std::string& path) {
     files = gkfs::syscall::gkfs_get_file_list(path);
 
     for(auto& file : files) {
-        file = "/" + file;
+
         struct stat buf;
-        stat(file, &buf);
+        stat("/" + file, &buf);
         if(S_ISDIR(buf.st_mode)) {
-            std::vector<std::string> subfiles = readdir(file);
+
+            std::vector<std::string> subfiles = readdir("/" + file);
             final_list.insert(final_list.end(), subfiles.begin(),
                               subfiles.end());
         } else {
-            final_list.push_back(file);
+
+            if(path.size() != 1) {
+                final_list.push_back(path + "/" + file);
+            } else {
+                final_list.push_back("/" + file);
+            }
         }
     }
+
     return final_list;
 }
 

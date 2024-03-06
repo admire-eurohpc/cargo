@@ -66,5 +66,9 @@ posix_plugin::stat(const std::string& path, struct stat* buf) {
     return ::stat(path.c_str(), buf);
 }
 
+ssize_t
+posix_plugin::size(const std::string& path) {
+    return std::filesystem::file_size(path);
+}
 
 }; // namespace cargo

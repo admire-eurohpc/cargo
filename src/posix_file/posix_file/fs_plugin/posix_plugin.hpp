@@ -31,7 +31,8 @@ public:
     int
     stat(const std::string& path, struct stat* buf) final;
 
-
+    ssize_t
+    size(const std::string& path) final;
 };
 } // namespace cargo
 #endif // POSIX_PLUGIN_HPP

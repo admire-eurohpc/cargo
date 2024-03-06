@@ -45,6 +45,8 @@ public:
     unlink(const std::string& path) = 0;
     virtual int
     stat(const std::string& path, struct stat* buf) = 0;
+    virtual ssize_t
+    size(const std::string& path) = 0;
 };
 } // namespace cargo
 #endif // FS_PLUGIN_HPP

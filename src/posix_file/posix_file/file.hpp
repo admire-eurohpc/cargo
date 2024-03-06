@@ -180,12 +180,12 @@ public:
 
     std::size_t
     size() const noexcept {
-        return std::filesystem::file_size(m_path);
+        return m_fs_plugin->size(m_path);
     }
 
     auto
     remove() noexcept {
-        return std::filesystem::remove(m_path);
+        return m_fs_plugin->unlink(m_path);
     }
 
     void

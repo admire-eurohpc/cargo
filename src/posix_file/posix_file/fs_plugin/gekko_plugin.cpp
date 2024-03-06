@@ -97,5 +97,15 @@ gekko_plugin::stat(const std::string& path, struct stat* buf) {
     return gkfs::syscall::gkfs_stat(path, buf);
 }
 
+ssize_t
+gekko_plugin::size(const std::string& path) {
+    struct stat buf;
+    int res = gekko_plugin::stat(path, &buf);
+    if(res != 0) {
+        return -1;
+    }
+    return buf.st_size;
+}
+
 
 } // namespace cargo

@@ -48,8 +48,8 @@ struct StringMaker<posix_file::ranges::range> {
 
 struct scoped_file : public posix_file::file {
 
-    explicit scoped_file(std::filesystem::path filepath)
-        : posix_file::file(std::move(filepath), cargo::FSPlugin::type::posix) {}
+    explicit scoped_file(std::filesystem::path filepath, cargo::FSPlugin::type type)
+        : posix_file::file(std::move(filepath), type) {}
 
     ~scoped_file() {
         remove();
@@ -72,7 +72,7 @@ create_temporary_file(std::size_t desired_size) {
         abort();
     }
 
-    return scoped_file{std::filesystem::path{name}};
+    return scoped_file{std::filesystem::path{name}, cargo::FSPlugin::type::posix};
 }
 
 std::vector<posix_file::ranges::range>

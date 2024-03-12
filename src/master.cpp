@@ -196,8 +196,17 @@ master_server::ftio_scheduling_ult() {
             continue;
 
         LOGGER_INFO("Waiting period : {}", m_period);
+        // Wait in small periods, just in case we change it, This should be mutexed...
+        auto elapsed = m_period;
+        while (elapsed > 0) {
             std::this_thread::sleep_for(
-                    std::chrono::seconds((int)(m_period )));
+                    std::chrono::seconds((int)(1)));
+            elapsed -= 1;
+            if (m_ftio_changed) {
+                elapsed = m_period;
+                m_ftio_changed = false;
+            }
+        }
 
         LOGGER_INFO("Checking if there is work to do in {}",
                     m_pending_transfer.m_sources);

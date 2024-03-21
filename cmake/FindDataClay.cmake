@@ -23,39 +23,38 @@
 ################################################################################
 
 
-find_path(Hercules_INCLUDE_DIR
-  NAMES user_functions.hpp
-  PREFIX hercules
+find_path(DataClay_INCLUDE_DIR
+  NAMES dataclayplugin.h
 )
 
-find_library(Hercules_LIBRARY
-  NAMES libhercules_user_lib.so
+find_library(DataClay_LIBRARY
+  NAMES dataclay-plugin/libdataclayplugin.so
 )
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
-	Hercules
+	DataClay
 	DEFAULT_MSG
-	Hercules_INCLUDE_DIR
-	Hercules_LIBRARY
+	DataClay_INCLUDE_DIR
+	DataClay_LIBRARY
 )
 
-if(Hercules_FOUND)
-  set(Hercules_LIBRARIES ${Hercules_LIBRARY})
-  set(Hercules_INCLUDE_DIRS ${Hercules_INCLUDE_DIR})
+if(DataClay_FOUND)
+  set(DataClay_LIBRARIES ${DataClay_LIBRARY})
+  set(DataClay_INCLUDE_DIRS ${DataClay_INCLUDE_DIR})
 
 
-  if(NOT TARGET Hercules::Hercules)
-	  add_library(Hercules::Hercules UNKNOWN IMPORTED)
-	  set_target_properties(Hercules::Hercules PROPERTIES
-		IMPORTED_LOCATION "${Hercules_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES "${Hercules_INCLUDE_DIR}"
+  if(NOT TARGET DataClay::DataClay)
+	  add_library(DataClay::DataClay UNKNOWN IMPORTED)
+	  set_target_properties(DataClay::DataClay PROPERTIES
+		IMPORTED_LOCATION "${DataClay_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES "${DataClay_INCLUDE_DIR}"
 	  )
 	endif()
 endif()
 
 
 mark_as_advanced(
-	Hercules_INCLUDE_DIR
-	Hercules_LIBRARY
+	DataClay_INCLUDE_DIR
+	DataClay_LIBRARY
 )

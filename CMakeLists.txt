@@ -281,6 +281,14 @@ if (Expand_FOUND)
   message(STATUS "[${PROJECT_NAME}] Found Expand")
 endif()
 
+### DataClay: Optional for DataClay
+find_package(DataClay)
+if (DataClay_FOUND)
+  add_compile_definitions(DATACLAY_PLUGIN)
+  message(STATUS "[${PROJECT_NAME}] Found DataClay")
+endif()
+
+
 ### Threads: required by ASIO
 find_package(Threads REQUIRED)
 

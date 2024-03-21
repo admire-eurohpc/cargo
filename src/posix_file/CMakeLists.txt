@@ -32,9 +32,11 @@ if (Expand_FOUND)
    set(EXPAND_INCLUDES posix_file/fs_plugin/expand_plugin.hpp posix_file/fs_plugin/expand_plugin.cpp)
 endif()
 if (Hercules_FOUND)
-   set(HERCULES_INCLUDES posix_file/fs_plugin/hercules_plugin.chpp posix_file/fs_plugin/hercules_plugin.cpp)
+   set(HERCULES_INCLUDES posix_file/fs_plugin/hercules_plugin.hpp posix_file/fs_plugin/hercules_plugin.cpp)
 endif()
-
+if (DataClay_FOUND)
+   set(DATACLAY_INCLUDES posix_file/fs_plugin/dataclay_plugin.hpp posix_file/fs_plugin/dataclay_plugin.cpp)
+endif()
 
 target_sources(
   posix_file
@@ -52,6 +54,7 @@ target_sources(
             ${GEKKO_INCLUDES}
             ${HERCULES_INCLUDES}
             ${EXPAND_INCLUDES}
+            ${DATACLAY_INCLUDES}
             
 )
 
@@ -73,6 +76,9 @@ if (Hercules_FOUND)
    set(ADHOC ${ADHOC} Hercules::Hercules)
 endif()
 
+if (DataClay_FOUND)
+   set(ADHOC ${ADHOC} DataClay::DataClay)
+endif()
 
 target_link_libraries(posix_file INTERFACE fmt::fmt tl::expected PRIVATE ${ADHOC})
 

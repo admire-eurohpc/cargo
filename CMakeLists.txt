@@ -285,8 +285,11 @@ endif()
 find_package(DataClay)
 if (DataClay_FOUND)
   add_compile_definitions(DATACLAY_PLUGIN)
+  add_compile_definitions(DataClay_PATH="${DataClay_MODEL_DIR}/dataclay-plugin")
   message(STATUS "[${PROJECT_NAME}] Found DataClay")
 endif()
+
+
 
 
 ### Threads: required by ASIO

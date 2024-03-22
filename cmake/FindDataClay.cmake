@@ -25,7 +25,19 @@
 
 find_path(DataClay_INCLUDE_DIR
   NAMES dataclayplugin.h
+  PREFIX dataclay-plugin
 )
+
+find_path(DataClay_MODEL_DIR
+  NAMES client.py
+  PREFIX dataclay-plugin
+)
+message(STATUS "[${PROJECT_NAME}] DataClay library MODEL DIR ${DataClay_MODEL_DIR}")
+
+find_package(Python3 REQUIRED Development)
+message(STATUS "[${PROJECT_NAME}] DataClay library needs Python include ${Python3_INCLUDE_DIRS}")
+
+
 
 find_library(DataClay_LIBRARY
   NAMES dataclay-plugin/libdataclayplugin.so
@@ -37,18 +49,19 @@ find_package_handle_standard_args(
 	DEFAULT_MSG
 	DataClay_INCLUDE_DIR
 	DataClay_LIBRARY
+	DataClay_MODEL_DIR
 )
 
 if(DataClay_FOUND)
   set(DataClay_LIBRARIES ${DataClay_LIBRARY})
-  set(DataClay_INCLUDE_DIRS ${DataClay_INCLUDE_DIR})
+  set(DataClay_INCLUDE_DIRS ${DataClay_INCLUDE_DIR} )
 
 
   if(NOT TARGET DataClay::DataClay)
 	  add_library(DataClay::DataClay UNKNOWN IMPORTED)
 	  set_target_properties(DataClay::DataClay PROPERTIES
 		IMPORTED_LOCATION "${DataClay_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES "${DataClay_INCLUDE_DIR}"
+		INTERFACE_INCLUDE_DIRECTORIES "${DataClay_INCLUDE_DIR};${Python3_INCLUDE_DIRS}"
 	  )
 	endif()
 endif()

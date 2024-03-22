@@ -190,8 +190,8 @@ cli/ccp --server ofi+tcp://127.0.0.1:62000 --input /directory/subdir --output /d
 `--if or --of` can be: posix, gekkofs, hercules, dataclay, expand and parallel (for MPIIO requests, but only one side is allowed).
 
 Typically you should use posix or parallel and then one specialized adhocfs. Posix is also able to be used with LD_PRELOAD, however
-higher performance and flexibility can be obtained using the specific configuration.
+higher performance and flexibility can be obtained using the specific configuration. Some backends are only available with directory support for stage-in. 
 
 On the other hand, MPIIO (parallel) uses normally file locking so there is a performance imapact, and posix is faster (we supose no external modifications are done).
 
-Other commands are `ping`, `shutdown` and `shaping` (for bw control).
+Other commands are `ping`, `shutdown`, `shaping` (for bw control) and `cargo_ftio` to interactions with ftio (stage-out and gekkofs)

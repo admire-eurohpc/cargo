@@ -7,15 +7,15 @@ extern "C" {
 #include <iostream>
 namespace cargo {
 dataclay_plugin::dataclay_plugin() {
-    ::dataclay_plugin("cargo");
+    ::dataclay_plugin("cargo", DataClay_PATH);
+    std::cout << "dataclay_plugin loaded" << std::endl;
 }
 
 dataclay_plugin::~dataclay_plugin() {}
 // Override the open function
 int
 dataclay_plugin::open(const std::string& path, int flags, unsigned int mode) {
-    // Call to dataclayfs has the signature inverted
-    return dataclay_open(path.c_str(), flags, mode);
+    return dataclay_open((char *)path.c_str(), flags, mode);
 }
 
 // Override the pread function
@@ -27,14 +27,12 @@ dataclay_plugin::pread(int fd, void* buf, size_t count, off_t offset) {
 // Override the pwrite function
 ssize_t
 dataclay_plugin::pwrite(int fd, const void* buf, size_t count, off_t offset) {
-    int result = dataclay_pwrite(fd, (char*) buf, count, offset);
-    return result;
+    return dataclay_pwrite(fd, (char*) buf, count, offset);
 }
 
 
 bool
 dataclay_plugin::mkdir(const std::string& path, mode_t mode) {
-    // int result = gkfs::syscall::gkfs_create(path, mode | S_IFDIR);
     (void) path;
     (void) mode;
     return true; // We don't have directories
@@ -61,7 +59,6 @@ dataclay_plugin::fallocate(int fd, int mode, off_t offset, off_t len) {
     (void) mode;
     (void) offset;
     (void) len;
-    std::cerr << "dataclay_plugin fallocate not supported" << std::endl;
     return len;
 }
 

@@ -57,29 +57,28 @@ request_manager::create(std::size_t nfiles, std::size_t nworkers) {
 
 /**
  * @brief Update the request for ftio processing (as it is modified by readdir)
- * 
- * @param request 
- * @param nfiles 
- * @param nworkers 
- * @return error_code 
+ *
+ * @param request
+ * @param nfiles
+ * @param nworkers
+ * @return error_code
  */
 error_code
-request_manager::update(std::uint64_t tid, std::size_t nfiles, std::size_t nworkers){
+request_manager::update(std::uint64_t tid, std::size_t nfiles,
+                        std::size_t nworkers) {
     abt::unique_lock lock(m_mutex);
+    m_requests[tid] = std::vector<file_status>{nfiles,
+                                          std::vector<part_status>{nworkers}};
 
-    if(const auto it = m_requests.find(tid); it != m_requests.end()) {
-        it->second.resize(nfiles, std::vector<part_status>{nworkers});
-        return error_code::success;
-        
-    }
-    LOGGER_ERROR("{}: Request {} not found", __FUNCTION__, tid);
-    return error_code::no_such_transfer;
+    return error_code::success;
+
+
 }
 
 
 error_code
-request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid, std::string name, 
-                        transfer_state s, float bw,
+request_manager::update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
+                        std::string name, transfer_state s, float bw,
                         std::optional<error_code> ec) {
 
     abt::unique_lock lock(m_mutex);
@@ -114,7 +113,7 @@ request_manager::lookup(std::uint64_t tid) {
                 return request_status{ps};
             }
         }
-    // TODO : completed should have the name of the file if its not found 
+        // TODO : completed should have the name of the file if its not found
         return request_status{"", transfer_state::completed, 0.0f};
     }
 
@@ -143,7 +142,7 @@ request_manager::lookup_all(std::uint64_t tid) {
                 // not finished
                 rs = request_status{ps};
             }
-            rs.bw(bw/(double)fs.size());
+            rs.bw(bw / (double) fs.size());
             result.push_back(rs);
         }
         return result;

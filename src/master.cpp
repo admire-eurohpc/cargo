@@ -181,7 +181,7 @@ master_server::ftio_scheduling_ult() {
 
         if(!m_pending_transfer.m_work or m_period < 0.0f) {
             std::this_thread::sleep_for(1000ms);
-        } 
+        }
 
 
         // Do something with the confidence and probability
@@ -196,13 +196,13 @@ master_server::ftio_scheduling_ult() {
             continue;
 
         LOGGER_INFO("Waiting period : {}", m_period);
-        // Wait in small periods, just in case we change it, This should be mutexed...
+        // Wait in small periods, just in case we change it, This should be
+        // mutexed...
         auto elapsed = m_period;
-        while (elapsed > 0) {
-            std::this_thread::sleep_for(
-                    std::chrono::seconds((int)(1)));
+        while(elapsed > 0) {
+            std::this_thread::sleep_for(std::chrono::seconds((int) (1)));
             elapsed -= 1;
-            if (m_ftio_changed) {
+            if(m_ftio_changed) {
                 elapsed = m_period;
                 m_ftio_changed = false;
             }
@@ -231,7 +231,7 @@ master_server::ftio_scheduling_ult() {
         if(finished) {
             // Delete all source files
             LOGGER_INFO("Transfer finished for {}",
-                    m_pending_transfer.m_expanded_sources);
+                        m_pending_transfer.m_expanded_sources);
             auto fs = FSPlugin::make_fs(cargo::FSPlugin::type::gekkofs);
             for(auto& file : m_pending_transfer.m_expanded_sources) {
                 LOGGER_INFO("Deleting {}", file.path());
@@ -505,7 +505,19 @@ master_server::transfer_datasets(const network::request& req,
             })
             .map([&](auto&& r) {
                 assert(v_s_new.size() == v_d_new.size());
+                if(m_ftio) {
+                    if(sources[0].get_type() == cargo::dataset::type::gekkofs) {
 
+                        // We have only one pendingTransfer for FTIO
+                        // that can be updated, the issue is that we
+                        // need the tid.
+                        m_pending_transfer.m_p = r;
+                        m_pending_transfer.m_sources = sources;
+                        m_pending_transfer.m_targets = targets;
+                        m_pending_transfer.m_work = true;
+                        LOGGER_INFO("Stored stage-out information");
+                    }
+                }
                 // For all the transfers
                 for(std::size_t i = 0; i < v_s_new.size(); ++i) {
                     const auto& s = v_s_new[i];
@@ -523,20 +535,10 @@ master_server::transfer_datasets(const network::request& req,
 
                     // If we are not using ftio start transfer if we are on
                     // stage-out
-                    if(m_ftio) {
+                    if(!m_ftio) {
                         // If we are on stage-out
-                        if(s.get_type() == cargo::dataset::type::gekkofs) {
 
-                            // We have only one pendingTransfer for FTIO
-                            // that can be updated, the issue is that we
-                            // need the tid.
-                            m_pending_transfer.m_p = r;
-                            m_pending_transfer.m_sources = sources;
-                            m_pending_transfer.m_targets = targets;
-                            m_pending_transfer.m_work = true;
-                            LOGGER_INFO("Stored stage-out information");
-                        }
-                    } else {
+
                         for(std::size_t rank = 1; rank <= r.nworkers();
                             ++rank) {
                             const auto [t, m] = make_message(r.tid(), i, s, d);

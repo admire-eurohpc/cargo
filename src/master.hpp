@@ -89,7 +89,7 @@ private:
 
     void
     ftio_int(const network::request& req, float confidence, float probability,
-             float period);
+             float period, bool run);
 
 private:
     // Dedicated execution stream for the MPI listener ULT
@@ -104,7 +104,7 @@ private:
     float m_confidence = -1.0f;
     float m_probability = -1.0f;
     float m_period = -1.0f;
-    bool m_ftio_changed = true;
+    bool m_ftio_run = true;
     // FTIO enabled flag, we need to call ftio once.
     bool m_ftio = false;
 

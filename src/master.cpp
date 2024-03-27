@@ -179,33 +179,44 @@ master_server::ftio_scheduling_ult() {
 
     while(!m_shutting_down) {
 
-        if(!m_pending_transfer.m_work or m_period < 0.0f) {
+        if(!m_pending_transfer.m_work or !m_ftio_run) {
             std::this_thread::sleep_for(1000ms);
         }
+        //        if(!m_pending_transfer.m_work or m_period < 0.0f) {
+        //            std::this_thread::sleep_for(1000ms);
+        //        }
 
 
         // Do something with the confidence and probability
 
-        if(m_ftio_changed) {
-            m_ftio_changed = false;
-            LOGGER_INFO("Confidence is {}, probability is {} and period is {}",
-                        m_confidence, m_probability, m_period);
-        }
+        //        if(m_ftio_run) {
+        //            m_ftio_run = false;
+        //            LOGGER_INFO("Confidence is {}, probability is {} and
+        //            period is {}",
+        //                        m_confidence, m_probability, m_period);
+        //        }
 
         if(!m_pending_transfer.m_work)
             continue;
-
-        LOGGER_INFO("Waiting period : {}", m_period);
+        if(m_period > 0) {
+            LOGGER_INFO("Waiting period : {}", m_period);
+        } else {
+            LOGGER_INFO("Waiting for run trigger ...");
+        }
         // Wait in small periods, just in case we change it, This should be
         // mutexed...
         auto elapsed = m_period;
         while(elapsed > 0) {
             std::this_thread::sleep_for(std::chrono::seconds((int) (1)));
             elapsed -= 1;
-            if(m_ftio_changed) {
+            // reset elapsed value when new RPC comes in
+            if(m_ftio_run) {
                 elapsed = m_period;
-                m_ftio_changed = false;
+                m_ftio_run = false;
             }
+        }
+        if(!m_ftio_run) {
+            continue;
         }
 
         LOGGER_INFO("Checking if there is work to do in {}",
@@ -238,6 +249,12 @@ master_server::ftio_scheduling_ult() {
                 // We need to use gekkofs to delete
                 fs->unlink(file.path());
             }
+        }
+        if(m_period > 0) {
+            // always run whenever period is set
+            m_ftio_run = true;
+        } else {
+            m_ftio_run = false;
         }
     }
 
@@ -636,7 +653,7 @@ master_server::transfer_statuses(const network::request& req,
 
 void
 master_server::ftio_int(const network::request& req, float conf, float prob,
-                        float period) {
+                        float period, bool run) {
     using network::get_address;
     using network::rpc_info;
     using proto::generic_response;
@@ -646,12 +663,14 @@ master_server::ftio_int(const network::request& req, float conf, float prob,
     m_confidence = conf;
     m_probability = prob;
     m_period = period;
-    m_ftio_changed = true;
+    m_ftio_run = run;
+    if(m_period > 0)
+        m_ftio_run = true;
     m_ftio = true;
 
     LOGGER_INFO(
-            "rpc {:>} body: {{confidence: {}, probability: {}, period: {}}}",
-            rpc, conf, prob, period);
+            "rpc {:>} body: {{confidence: {}, probability: {}, period: {}, run: {}}}",
+            rpc, conf, prob, period, run);
 
     const auto resp = generic_response{rpc.id(), error_code::success};
 

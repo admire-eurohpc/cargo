@@ -35,6 +35,7 @@ struct ftio_config {
     float confidence;
     float probability;
     float period;
+    bool run{false};
 };
 
 ftio_config
@@ -52,16 +53,18 @@ parse_command_line(int argc, char* argv[]) {
 
     app.add_option("-c,--conf", cfg.confidence, "confidence")
             ->option_text("float")
-            ->required();
+            ->default_val("-1.0");
 
     app.add_option("-p,--probability", cfg.probability, "probability")
             ->option_text("float")
-            ->default_str("-1.0");
+            ->default_val("-1.0");
 
     app.add_option("-t,--period", cfg.period, "period")
             ->option_text("float")
-            ->required();
-
+            ->default_val("-1.0");
+    app.add_flag(
+            "--run", cfg.run,
+            "Trigger stage operation to run now. Has no effect when period is set > 0");
 
     try {
         app.parse(argc, argv);
@@ -94,7 +97,9 @@ main(int argc, char* argv[]) {
 
         if(const auto result = rpc_client.lookup(address); result.has_value()) {
             const auto& endpoint = result.value();
-            const auto retval = endpoint.call("ftio_int", cfg.confidence, cfg.probability, cfg.period);
+            const auto retval =
+                    endpoint.call("ftio_int", cfg.confidence, cfg.probability,
+                                  cfg.period, cfg.run);
 
             if(retval.has_value()) {
 

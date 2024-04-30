@@ -101,7 +101,26 @@ target_link_libraries(shaping
     cargo
 )
 
-install(TARGETS cargo_ping cargo_shutdown ccp shaping
+
+################################################################################
+## ftio: A CLI tool to send the ftio info to a Cargo server 
+add_executable(cargo_ftio)
+
+target_sources(cargo_ftio
+  PRIVATE
+    ftio.cpp
+)
+
+target_link_libraries(cargo_ftio
+  PUBLIC
+    fmt::fmt
+    CLI11::CLI11
+    net::rpc_client
+    cargo
+)
+
+
+install(TARGETS cargo_ping cargo_shutdown ccp shaping cargo_ftio
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 

@@ -78,6 +78,7 @@ parse_command_line(int argc, char* argv[]) {
                    "Flags for input datasets. Accepted values\n"
                    "  - posix: read data using POSIX (default)\n"
                    "  - parallel: read data using MPI-IO\n"
+                    "  - dataclay: read data using DATACLAY\n"
                    "  - gekkofs: read data using gekkofs user library\n")
             ->option_text("FLAGS")
             ->transform(CLI::CheckedTransformer(dataset_flags_map,
@@ -87,6 +88,7 @@ parse_command_line(int argc, char* argv[]) {
                    "Flags for output datasets. Accepted values\n"
                    "  - posix: write data using POSIX (default)\n"
                    "  - parallel: write data using MPI-IO\n"
+                   "  - dataclay: write data using DATACLAY\n"
                    "  - gekkofs: write data using gekkofs user library\n")
             ->option_text("FLAGS")
             ->transform(CLI::CheckedTransformer(dataset_flags_map,

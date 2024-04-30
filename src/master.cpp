@@ -66,7 +66,7 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
     }
 
     return std::make_tuple(
-            static_cast<int>(cargo::tag::seq_mixed),
+            static_cast<int>(cargo::tag::sequential),
             cargo::transfer_message{tid, seqno, input.path(),
                                     static_cast<uint32_t>(input.get_type()),
                                     output.path(),
@@ -88,7 +88,12 @@ master_server::master_server(std::string name, std::string address,
       provider(m_network_engine, 0),
       m_mpi_listener_ess(thallium::xstream::create()),
       m_mpi_listener_ult(m_mpi_listener_ess->make_thread(
-              [this]() { mpi_listener_ult(); })) {
+              [this]() { mpi_listener_ult(); })),
+      m_ftio_listener_ess(thallium::xstream::create()),
+      m_ftio_listener_ult(m_ftio_listener_ess->make_thread(
+              [this]() { ftio_scheduling_ult(); }))
+
+{
 
 #define EXPAND(rpc_name) #rpc_name##s, &master_server::rpc_name
     provider::define(EXPAND(ping));
@@ -97,6 +102,7 @@ master_server::master_server(std::string name, std::string address,
     provider::define(EXPAND(transfer_status));
     provider::define(EXPAND(bw_control));
     provider::define(EXPAND(transfer_statuses));
+    provider::define(EXPAND(ftio_int));
 
 #undef EXPAND
 
@@ -110,6 +116,10 @@ master_server::master_server(std::string name, std::string address,
         m_mpi_listener_ult = thallium::managed<thallium::thread>{};
         m_mpi_listener_ess->join();
         m_mpi_listener_ess = thallium::managed<thallium::xstream>{};
+        m_ftio_listener_ult->join();
+        m_ftio_listener_ult = thallium::managed<thallium::thread>{};
+        m_ftio_listener_ess->join();
+        m_ftio_listener_ess = thallium::managed<thallium::xstream>{};
     });
 }
 
@@ -125,7 +135,7 @@ master_server::mpi_listener_ult() {
 
         if(!msg) {
             std::this_thread::sleep_for(10ms);
-            //thallium::thread::self().sleep(m_network_engine, 10);
+            // thallium::thread::self().sleep(m_network_engine, 10);
             continue;
         }
 
@@ -161,6 +171,94 @@ master_server::mpi_listener_ult() {
     world.barrier();
 
     LOGGER_INFO("Exit");
+}
+
+
+void
+master_server::ftio_scheduling_ult() {
+
+    while(!m_shutting_down) {
+
+        if(!m_pending_transfer.m_work or !m_ftio_run) {
+            std::this_thread::sleep_for(1000ms);
+        }
+        //        if(!m_pending_transfer.m_work or m_period < 0.0f) {
+        //            std::this_thread::sleep_for(1000ms);
+        //        }
+
+
+        // Do something with the confidence and probability
+
+        //        if(m_ftio_run) {
+        //            m_ftio_run = false;
+        //            LOGGER_INFO("Confidence is {}, probability is {} and
+        //            period is {}",
+        //                        m_confidence, m_probability, m_period);
+        //        }
+
+        if(!m_pending_transfer.m_work)
+            continue;
+        if(m_period > 0) {
+            LOGGER_INFO("Waiting period : {}", m_period);
+        } else {
+            LOGGER_INFO("Waiting for run trigger ...");
+        }
+        // Wait in small periods, just in case we change it, This should be
+        // mutexed...
+        auto elapsed = m_period;
+        while(elapsed > 0) {
+            std::this_thread::sleep_for(std::chrono::seconds((int) (1)));
+            elapsed -= 1;
+            // reset elapsed value when new RPC comes in
+            if(m_ftio_run) {
+                elapsed = m_period;
+                m_ftio_run = false;
+            }
+        }
+        if(!m_ftio_run) {
+            continue;
+        }
+
+        LOGGER_INFO("Checking if there is work to do in {}",
+                    m_pending_transfer.m_sources);
+        transfer_dataset_internal(m_pending_transfer);
+        // This launches the workers to do the work...
+        // We wait until this transfer is finished
+        LOGGER_INFO("Transferring : {}", m_pending_transfer.m_expanded_sources);
+        bool finished = false;
+        while(!finished) {
+            std::this_thread::sleep_for(10ms);
+            m_request_manager.lookup(m_pending_transfer.m_p.tid())
+                    .or_else([&](auto&& ec) {
+                        LOGGER_ERROR("Failed to lookup request: {}", ec);
+                    })
+                    .map([&](auto&& rs) {
+                        if(rs.state() == transfer_state::completed) {
+                            finished = true;
+                        }
+                    });
+        }
+
+        if(finished) {
+            // Delete all source files
+            LOGGER_INFO("Transfer finished for {}",
+                        m_pending_transfer.m_expanded_sources);
+            auto fs = FSPlugin::make_fs(cargo::FSPlugin::type::gekkofs);
+            for(auto& file : m_pending_transfer.m_expanded_sources) {
+                LOGGER_INFO("Deleting {}", file.path());
+                // We need to use gekkofs to delete
+                fs->unlink(file.path());
+            }
+        }
+        if(m_period > 0) {
+            // always run whenever period is set
+            m_ftio_run = true;
+        } else {
+            m_ftio_run = false;
+        }
+    }
+
+    LOGGER_INFO("Shutting down.");
 }
 
 #define RPC_NAME() (__FUNCTION__)
@@ -220,6 +318,120 @@ master_server::shutdown(const network::request& req) {
     server::shutdown();
 }
 
+// Function that gets a pending_request, fills the request and sends the mpi
+// message for the transfer We only put files that has mtime < actual
+// timestamp , intended for stage-out and ftio
+void
+master_server::transfer_dataset_internal(pending_transfer& pt) {
+
+    mpi::communicator world;
+    std::vector<cargo::dataset> v_s_new;
+    std::vector<cargo::dataset> v_d_new;
+    time_t now = time(0);
+    now = now - 5; // Threshold for mtime
+    for(auto i = 0u; i < pt.m_sources.size(); ++i) {
+
+        const auto& s = pt.m_sources[i];
+        const auto& d = pt.m_targets[i];
+
+        // We need to expand directories to single files on the s
+        // Then create a new message for each file and append the
+        // file to the d prefix
+        // We will asume that the path is the original absolute
+        // The prefix selects the method of transfer
+        // And if not specified then we will use none
+        // i.e. ("xxxx:/xyyy/bbb -> gekko:/cccc/ttt ) then
+        // bbb/xxx -> ttt/xxx
+        const auto& p = s.path();
+
+        std::vector<std::string> files;
+        // Check stat of p using FSPlugin class
+        auto fs = FSPlugin::make_fs(
+                static_cast<cargo::FSPlugin::type>(s.get_type()));
+        struct stat buf;
+        fs->stat(p, &buf);
+        if(buf.st_mode & S_IFDIR) {
+            LOGGER_INFO("Expanding input directory {}", p);
+            files = fs->readdir(p);
+
+            /*
+            We have all the files expanded. Now create a new
+            cargo::dataset for each file as s and a new
+            cargo::dataset appending the base directory in d to the
+            file name.
+            */
+            for(const auto& f : files) {
+                cargo::dataset s_new(s);
+                cargo::dataset d_new(d);
+                s_new.path(f);
+                // We need to get filename from the original root
+                // path (d.path) plus the path from f, removing the
+                // initial path p (taking care of the trailing /)
+                auto leading = p.size();
+                if(leading > 0 and p.back() == '/') {
+                    leading--;
+                }
+
+                d_new.path(d.path() /
+                           std::filesystem::path(f.substr(leading + 1)));
+
+                LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
+                             d_new.path());
+                fs->stat(s_new.path(), &buf);
+                if(buf.st_mtime < now) {
+                    v_s_new.push_back(s_new);
+                    v_d_new.push_back(d_new);
+                }
+            }
+        } else {
+            fs->stat(s.path(), &buf);
+            if(buf.st_mtime < now) {
+                v_s_new.push_back(s);
+                v_d_new.push_back(d);
+            }
+        }
+    }
+
+    // empty m_expanded_sources
+    pt.m_expanded_sources.assign(v_s_new.begin(), v_s_new.end());
+    pt.m_expanded_targets.assign(v_d_new.begin(), v_d_new.end());
+
+    // We have two vectors, so we process the transfer
+    // [1] Update request_manager
+    // [2] Send message to worker
+
+    auto ec = m_request_manager.update(pt.m_p.tid(), v_s_new.size(),
+                                       pt.m_p.nworkers());
+    if(ec != error_code::success) {
+        LOGGER_ERROR("Failed to update request: {}", ec);
+        return;
+    };
+
+    assert(v_s_new.size() == v_d_new.size());
+
+    // For all the transfers
+    for(std::size_t i = 0; i < v_s_new.size(); ++i) {
+        const auto& s = v_s_new[i];
+        const auto& d = v_d_new[i];
+
+        // Create the directory if it does not exist (only in
+        // parallel transfer)
+        if(!std::filesystem::path(d.path()).parent_path().empty() and
+           d.supports_parallel_transfer()) {
+            std::filesystem::create_directories(
+                    std::filesystem::path(d.path()).parent_path());
+        }
+
+
+        // Send message to worker
+        for(std::size_t rank = 1; rank <= pt.m_p.nworkers(); ++rank) {
+            const auto [t, m] = make_message(pt.m_p.tid(), i, s, d);
+            LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+            world.send(static_cast<int>(rank), t, m);
+        }
+    }
+}
+
 void
 master_server::transfer_datasets(const network::request& req,
                                  const std::vector<dataset>& sources,
@@ -236,8 +448,8 @@ master_server::transfer_datasets(const network::request& req,
                 targets);
 
 
-    // As we accept directories expanding directories should be done before and
-    // update sources and targets.
+    // As we accept directories expanding directories should be done before
+    // and update sources and targets.
 
     std::vector<cargo::dataset> v_s_new;
     std::vector<cargo::dataset> v_d_new;
@@ -258,15 +470,16 @@ master_server::transfer_datasets(const network::request& req,
         // bbb/xxx -> ttt/xxx
         const auto& p = s.path();
 
-        std::vector<std::filesystem::path> files;
-        if(std::filesystem::is_directory(p)) {
+        std::vector<std::string> files;
+        // Check stat of p using FSPlugin class
+        auto fs = FSPlugin::make_fs(
+                static_cast<cargo::FSPlugin::type>(s.get_type()));
+        struct stat buf;
+        fs->stat(p, &buf);
+        if(buf.st_mode & S_IFDIR) {
             LOGGER_INFO("Expanding input directory {}", p);
-            for(const auto& f :
-                std::filesystem::recursive_directory_iterator(p)) {
-                if(std::filesystem::is_regular_file(f)) {
-                    files.push_back(f.path());
-                }
-            }
+            files = fs->readdir(p);
+
 
             /*
             We have all the files expanded. Now create a new
@@ -286,8 +499,8 @@ master_server::transfer_datasets(const network::request& req,
                     leading--;
                 }
 
-                d_new.path(d.path() / std::filesystem::path(
-                                              f.string().substr(leading + 1)));
+                d_new.path(d.path() /
+                           std::filesystem::path(f.substr(leading + 1)));
 
                 LOGGER_DEBUG("Expanded file {} -> {}", s_new.path(),
                              d_new.path());
@@ -309,8 +522,20 @@ master_server::transfer_datasets(const network::request& req,
             })
             .map([&](auto&& r) {
                 assert(v_s_new.size() == v_d_new.size());
+                if(m_ftio) {
+                    if(sources[0].get_type() == cargo::dataset::type::gekkofs) {
 
-                // For all the files
+                        // We have only one pendingTransfer for FTIO
+                        // that can be updated, the issue is that we
+                        // need the tid.
+                        m_pending_transfer.m_p = r;
+                        m_pending_transfer.m_sources = sources;
+                        m_pending_transfer.m_targets = targets;
+                        m_pending_transfer.m_work = true;
+                        LOGGER_INFO("Stored stage-out information");
+                    }
+                }
+                // For all the transfers
                 for(std::size_t i = 0; i < v_s_new.size(); ++i) {
                     const auto& s = v_s_new[i];
                     const auto& d = v_d_new[i];
@@ -325,10 +550,20 @@ master_server::transfer_datasets(const network::request& req,
                                 std::filesystem::path(d.path()).parent_path());
                     }
 
-                    for(std::size_t rank = 1; rank <= r.nworkers(); ++rank) {
-                        const auto [t, m] = make_message(r.tid(), i, s, d);
-                        LOGGER_INFO("msg <= to: {} body: {}", rank, m);
-                        world.send(static_cast<int>(rank), t, m);
+                    // If we are not using ftio start transfer if we are on
+                    // stage-out
+                    if(!m_ftio) {
+                        // If we are on stage-out
+
+
+                        for(std::size_t rank = 1; rank <= r.nworkers();
+                            ++rank) {
+                            const auto [t, m] = make_message(r.tid(), i, s, d);
+                            LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+                            world.send(static_cast<int>(rank), t, m);
+                        }
+                    } else {
+                        m_ftio_tid = r.tid();
                     }
                 }
                 LOGGER_INFO("rpc {:<} body: {{retval: {}, tid: {}}}", rpc,
@@ -415,6 +650,52 @@ master_server::transfer_statuses(const network::request& req,
 
                 req.respond(response_type{rpc.id(), error_code::success, v});
             });
+}
+
+
+void
+master_server::ftio_int(const network::request& req, float conf, float prob,
+                        float period, bool run, bool pause, bool resume) {
+    using network::get_address;
+    using network::rpc_info;
+    using proto::generic_response;
+    mpi::communicator world;
+    const auto rpc = rpc_info::create(RPC_NAME(), get_address(req));
+    if(pause) {
+        // send shaping info
+        for(int rank = 1; rank < world.size(); ++rank) {
+            // Slowdown 1 second per block
+            const auto m = cargo::shaper_message{m_ftio_tid, +10};
+            LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+            world.send(static_cast<int>(rank),
+                       static_cast<int>(tag::bw_shaping), m);
+        }
+    } else if(resume) {
+        for(int rank = 1; rank < world.size(); ++rank) {
+            // Restart operation
+            const auto m = cargo::shaper_message{m_ftio_tid, -1};
+            LOGGER_INFO("msg <= to: {} body: {}", rank, m);
+            world.send(static_cast<int>(rank),
+                       static_cast<int>(tag::bw_shaping), m);
+        }
+    } else {
+        m_confidence = conf;
+        m_probability = prob;
+        m_period = period;
+        m_ftio_run = run;
+        if(m_period > 0)
+            m_ftio_run = true;
+        m_ftio = true;
+    }
+    LOGGER_INFO(
+            "rpc {:>} body: {{confidence: {}, probability: {}, period: {}, run: {}, pause: {}, resume: {}}}",
+            rpc, conf, prob, period, run, pause, resume);
+
+    const auto resp = generic_response{rpc.id(), error_code::success};
+
+    LOGGER_INFO("rpc {:<} body: {{retval: {}}}", rpc, resp.error_code());
+
+    req.respond(resp);
 }
 
 } // namespace cargo

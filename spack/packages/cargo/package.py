@@ -27,7 +27,7 @@ class Cargo(CMakePackage):
     """A parallel data stager for malleable applications."""
 
     homepage = "https://storage.bsc.es/gitlab/hpc/cargo"
-    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.3.5/cargo-v0.3.5.tar.bz2"
+    url = "https://storage.bsc.es/gitlab/hpc/cargo/-/archive/v0.3.6/cargo-v0.3.6.tar.bz2"
     git = "https://storage.bsc.es/gitlab/hpc/cargo.git"
 
     maintainers("alberto-miranda")
@@ -40,8 +40,8 @@ class Cargo(CMakePackage):
     version("0.3.2", sha256="ceb6bcb738a35fb41f40b7b1cdd8a806d99995a227980e8ced61dd90418e5960", deprecated=True)
     version("0.3.3", sha256="1c4ab215e41905cc359894fa1df9006be16730ddc37c5b1369a9ea759bcb61cd", deprecated=True)
     version("0.3.4", sha256="42b740fb7e82c49d73dfb6caf7549876f72913afb75996c6558e956ea63de3da", deprecated=True)
-    version("0.3.5", sha256="5c2e998aa96b15bdf513e8c2fce5f20859cf9a6a51882c59b80d5d801a10edd8")
-    
+    version("0.3.5", sha256="5c2e998aa96b15bdf513e8c2fce5f20859cf9a6a51882c59b80d5d801a10edd8", deprecated=True)
+    version("0.3.6")
     # build variants
     variant('build_type',
             default='Release',

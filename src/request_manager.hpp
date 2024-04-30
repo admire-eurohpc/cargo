@@ -59,6 +59,9 @@ public:
     create(std::size_t nfiles, std::size_t nworkers);
 
     error_code
+    update(std::uint64_t tid, std::size_t nfiles, std::size_t nworkers);
+
+    error_code
     update(std::uint64_t tid, std::uint32_t seqno, std::size_t wid,
            std::string name, transfer_state s, float bw,
            std::optional<error_code> ec = std::nullopt);

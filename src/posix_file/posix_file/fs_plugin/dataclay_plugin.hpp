@@ -1,15 +1,15 @@
 
-#ifndef POSIX_PLUGIN_HPP
-#define POSIX_PLUGIN_HPP
+#ifndef DATACLAY_PLUGIN_HPP
+#define DATACLAY_PLUGIN_HPP
 
 #include "fs_plugin.hpp"
-#include <iostream>
+
 namespace cargo {
-class posix_plugin : public FSPlugin {
+class dataclay_plugin : public FSPlugin {
 
 public:
-    posix_plugin();
-
+    dataclay_plugin();
+    ~dataclay_plugin();
     int
     open(const std::string& path, int flags, unsigned int mode) final;
     bool
@@ -22,6 +22,7 @@ public:
     mkdir(const std::string& path, mode_t mode) final;
     off_t
     lseek(int fd, off_t offset, int whence) final;
+    // Fallocate is not needed in dataclay as pwrite takes care of it.
     off_t
     fallocate(int fd, int mode, off_t offset, off_t len) final;
     std::vector<std::string>
@@ -30,9 +31,9 @@ public:
     unlink(const std::string& path) final;
     int
     stat(const std::string& path, struct stat* buf) final;
-
     ssize_t
     size(const std::string& path) final;
 };
-} // namespace cargo
-#endif // POSIX_PLUGIN_HPP
+}; // namespace cargo
+
+#endif // dataclay_PLUGIN_HPP

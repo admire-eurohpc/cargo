@@ -41,7 +41,11 @@ mpio_write::operator()() {
         const auto workers_size = m_workers.size();
         const auto workers_rank = m_workers.rank();
         std::size_t block_size = m_kb_size * 1024u;
-        std::size_t file_size = std::filesystem::file_size(m_input_path);
+        // We need to open the file and ask size (using fs_plugin)
+        m_input_file = std::make_unique<posix_file::file>(
+                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
+
+        std::size_t file_size = m_input_file->size();
 
         // compute the number of blocks in the file
         int total_blocks = static_cast<int>(file_size / block_size);
@@ -68,8 +72,6 @@ mpio_write::operator()() {
                                           block_size);
         }
 
-        m_input_file = std::make_unique<posix_file::file>(
-                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
 
         m_workers_size = workers_size;
         m_workers_rank = workers_rank;
@@ -142,8 +144,18 @@ mpio_write::progress(int ongoing_index) {
 
 
             m_bytes_per_rank += n;
-            // Do sleep
-            std::this_thread::sleep_for(sleep_value());
+            // Do sleep (But be a bit reactive...)
+            auto total_sleep = sleep_value();
+            auto small_sleep = total_sleep / 100;
+            if (small_sleep == std::chrono::milliseconds(0)) small_sleep = std::chrono::milliseconds(1);
+            while( total_sleep > std::chrono::milliseconds(0)) {
+                std::this_thread::sleep_for(small_sleep);
+                total_sleep -= small_sleep;
+                if (total_sleep > sleep_value()) {
+                    break;
+                }
+            }
+            
             auto end = std::chrono::steady_clock::now();
             // Send transfer bw
             double elapsed_seconds =

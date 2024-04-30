@@ -9,18 +9,37 @@
 #ifdef EXPAND_PLUGIN
 #include "expand_plugin.hpp"
 #endif
-
+#ifdef DATACLAY_PLUGIN
+#include "dataclay_plugin.hpp"
+#endif
 namespace cargo {
 
-std::unique_ptr<FSPlugin>
+static std::shared_ptr<FSPlugin> m_fs_posix;
+static std::shared_ptr<FSPlugin> m_fs_gekkofs;
+static std::shared_ptr<FSPlugin> m_fs_dataclay;
+
+std::shared_ptr<FSPlugin>
 FSPlugin::make_fs(type t) {
 
     switch(t) {
         case type::posix:
-            return std::make_unique<cargo::posix_plugin>();
+        case type::parallel:
+            if(m_fs_posix == nullptr)
+                m_fs_posix = std::make_shared<cargo::posix_plugin>();
+            return m_fs_posix;
 #ifdef GEKKOFS_PLUGIN
         case type::gekkofs:
-            return std::make_unique<cargo::gekko_plugin>();
+            if(m_fs_gekkofs == nullptr)
+                m_fs_gekkofs = std::make_shared<cargo::gekko_plugin>();
+            return m_fs_gekkofs;
+
+#endif
+#ifdef DATACLAY_PLUGIN
+        case type::dataclay:
+            if(m_fs_dataclay == nullptr)
+                m_fs_dataclay = std::make_shared<cargo::dataclay_plugin>();
+            return m_fs_dataclay;
+
 #endif
 #ifdef HERCULES_PLUGIN
         case type::hercules:

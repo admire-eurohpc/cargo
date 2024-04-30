@@ -47,6 +47,7 @@ mpio_read::operator()() {
     using posix_file::views::strided;
     m_status = error_code::transfer_in_progress;
     try {
+
         const auto input_file = mpioxx::file::open(
                 m_workers, m_input_path, mpioxx::file_open_mode::rdonly);
 
@@ -167,9 +168,12 @@ mpio_read::progress(int ongoing_index) {
     using posix_file::views::strided;
     try {
         int index = 0;
+        // TODO : FS not defined...
+
         m_status = error_code::transfer_in_progress;
         for(const auto& file_range :
-            all_of(posix_file::file{m_input_path}) | as_blocks(m_block_size) |
+            all_of(posix_file::file{m_input_path, m_fs_i_type}) |
+                    as_blocks(m_block_size) |
                     strided(m_workers_size, m_workers_rank)) {
             if(index < ongoing_index) {
                 ++index;
@@ -179,13 +183,25 @@ mpio_read::progress(int ongoing_index) {
                     return index;
                 }
             }
+            // LOG indexes and sizes
 
             assert(m_buffer_regions[index].size() >= file_range.size());
+
             auto start = std::chrono::steady_clock::now();
             m_output_file->pwrite(m_buffer_regions[index], file_range.offset(),
                                   file_range.size());
             // Do sleep
-            std::this_thread::sleep_for(sleep_value());
+            auto total_sleep = sleep_value();
+            auto small_sleep = total_sleep / 100;
+            if(small_sleep == std::chrono::milliseconds(0))
+                small_sleep = std::chrono::milliseconds(1);
+            while(total_sleep > std::chrono::milliseconds(0)) {
+                std::this_thread::sleep_for(small_sleep);
+                total_sleep -= small_sleep;
+                if(total_sleep > sleep_value()) {
+                    break;
+                }
+            }
             auto end = std::chrono::steady_clock::now();
             // Send transfer bw
             double elapsed_seconds =
@@ -221,6 +237,7 @@ mpio_read::progress(int ongoing_index) {
     }
 
     m_status = error_code::success;
+    m_output_file->close();
     return -1;
 }
 

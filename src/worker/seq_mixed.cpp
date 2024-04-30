@@ -39,7 +39,9 @@ seq_mixed_operation::operator()() {
         const auto workers_size = m_workers.size();
         const auto workers_rank = m_workers.rank();
         std::size_t block_size = m_kb_size * 1024u;
-        std::size_t file_size = std::filesystem::file_size(m_input_path);
+        m_input_file = std::make_unique<posix_file::file>(
+                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
+        std::size_t file_size = m_input_file->size();
 
         // compute the number of blocks in the file
         int total_blocks = static_cast<int>(file_size / block_size);
@@ -66,8 +68,6 @@ seq_mixed_operation::operator()() {
                                           block_size);
         }
 
-        m_input_file = std::make_unique<posix_file::file>(
-                posix_file::open(m_input_path, O_RDONLY, 0, m_fs_i_type));
 
         m_output_file = std::make_unique<posix_file::file>(posix_file::create(
                 m_output_path, O_WRONLY, S_IRUSR | S_IWUSR, m_fs_o_type));

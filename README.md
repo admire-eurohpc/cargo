@@ -190,8 +190,25 @@ cli/ccp --server ofi+tcp://127.0.0.1:62000 --input /directory/subdir --output /d
 `--if or --of` can be: posix, gekkofs, hercules, dataclay, expand and parallel (for MPIIO requests, but only one side is allowed).
 
 Typically you should use posix or parallel and then one specialized adhocfs. Posix is also able to be used with LD_PRELOAD, however
-higher performance and flexibility can be obtained using the specific configuration.
+higher performance and flexibility can be obtained using the specific configuration. Some backends are only available with directory support for stage-in. 
 
 On the other hand, MPIIO (parallel) uses normally file locking so there is a performance imapact, and posix is faster (we supose no external modifications are done).
 
-Other commands are `ping`, `shutdown` and `shaping` (for bw control).
+Other commands are `ping`, `shutdown`, `shaping` (for bw control) and `cargo_ftio` to interactions with ftio (stage-out and gekkofs)
+
+`cargo_ftio` provides --resume, --pause and --run options to pause and resume the ftio related transfers. We set ftio transfers, the transfers that have gekkofs as --of, that had been setup after a ftio command.
+
+```shell
+#SETUP FTIO, this enables stage-out to be delayed (10000 seconds)
+cargo_ftio --server tcp://127.0.0.1:62000 -c -1 -p -1 -t 10000
+#SETUP Stage-out (monitors data directory and subdirs for new file)
+ccp --server tcp://127.0.0.1:62000 --input /data --output ~/stage-out --if gekkofs --of parallel
+#UPDATE FTIO (as needed, each 25 seconds will do the transfer order)
+cargo_ftio --server tcp://127.0.0.1:62000 -c -1 -p -1 -t 25
+```
+
+## User libraries for adhocfs
+If Cargo finds the adhoc fs libraries (we support GekkoFS and dataclay, in this release), it will automatically use them.
+The CMake command will show which adhocfs are detected.
+
+On the other hand, LD_preload techniques could be used.

@@ -30,7 +30,7 @@ cmake_minimum_required(VERSION 3.19)
 
 project(
   cargo
-  VERSION 0.3.5
+  VERSION 0.3.6
   LANGUAGES C CXX
 )
 
@@ -280,6 +280,17 @@ if (Expand_FOUND)
   add_compile_definitions(EXPAND_PLUGIN)
   message(STATUS "[${PROJECT_NAME}] Found Expand")
 endif()
+
+### DataClay: Optional for DataClay
+find_package(DataClay)
+if (DataClay_FOUND)
+  add_compile_definitions(DATACLAY_PLUGIN)
+  add_compile_definitions(DataClay_PATH="${DataClay_MODEL_DIR}/dataclay-plugin")
+  message(STATUS "[${PROJECT_NAME}] Found DataClay")
+endif()
+
+
+
 
 ### Threads: required by ASIO
 find_package(Threads REQUIRED)

@@ -28,8 +28,24 @@
 #include "net/server.hpp"
 #include "cargo.hpp"
 #include "request_manager.hpp"
+#include "parallel_request.hpp"
 
 namespace cargo {
+
+class pending_transfer {
+public:
+    pending_transfer():m_p(cargo::parallel_request(0,0,0)) {
+        m_work = false;
+    }
+
+    bool m_work;
+    cargo::parallel_request m_p;
+    std::vector<cargo::dataset> m_sources;
+    std::vector<cargo::dataset> m_targets;
+    // Expanded sources and targets (those that are being processed by the worker)
+    std::vector<cargo::dataset> m_expanded_sources;
+    std::vector<cargo::dataset> m_expanded_targets;
+};
 
 class master_server : public network::server,
                       public network::provider<master_server> {
@@ -43,6 +59,9 @@ public:
 private:
     void
     mpi_listener_ult();
+
+    void
+    ftio_scheduling_ult();
 
     void
     ping(const network::request& req);
@@ -61,16 +80,42 @@ private:
     void
     transfer_statuses(const network::request& req, std::uint64_t tid);
 
-    // Receives a request to increase or decrease BW 
+    // Receives a request to increase or decrease BW
     // -1 faster, 0 , +1 slower
     void
-    bw_control(const network::request& req, std::uint64_t tid, std::int16_t shaping);
+    bw_control(const network::request& req, std::uint64_t tid,
+               std::int16_t shaping);
+
+
+    void
+    ftio_int(const network::request& req, float confidence, float probability,
+             float period, bool run, bool pause, bool resume);
 
 private:
     // Dedicated execution stream for the MPI listener ULT
     thallium::managed<thallium::xstream> m_mpi_listener_ess;
     // ULT for the MPI listener
     thallium::managed<thallium::thread> m_mpi_listener_ult;
+    // Dedicated execution stream for the ftio scheduler
+    thallium::managed<thallium::xstream> m_ftio_listener_ess;
+    // ULT for the ftio scheduler
+    thallium::managed<thallium::thread> m_ftio_listener_ult;
+    // FTIO decision values (below 0, implies not used)
+    float m_confidence = -1.0f;
+    float m_probability = -1.0f;
+    float m_period = -1.0f;
+    bool m_ftio_run = true;
+    // We store the tid of the ftio transfer to proper slow it down.
+    std::uint64_t m_ftio_tid = 0;
+    // FTIO enabled flag, we need to call ftio once.
+    bool m_ftio = false;
+
+
+    pending_transfer m_pending_transfer;
+
+
+    void
+    transfer_dataset_internal(pending_transfer& pt);
     // Request manager
     request_manager m_request_manager;
 };

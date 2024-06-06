@@ -51,6 +51,8 @@ target_sources(
             posix_file/fs_plugin/posix_plugin.hpp
             posix_file/fs_plugin/fs_plugin.cpp
             posix_file/fs_plugin/posix_plugin.cpp
+            posix_file/fs_plugin/none_plugin.hpp
+            posix_file/fs_plugin/none_plugin.cpp
             ${GEKKO_INCLUDES}
             ${HERCULES_INCLUDES}
             ${EXPAND_INCLUDES}

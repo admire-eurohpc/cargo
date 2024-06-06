@@ -1,5 +1,6 @@
 #include "fs_plugin.hpp"
 #include "posix_plugin.hpp"
+#include "none_plugin.hpp"
 #ifdef GEKKOFS_PLUGIN
 #include "gekko_plugin.hpp"
 #endif
@@ -17,11 +18,20 @@ namespace cargo {
 static std::shared_ptr<FSPlugin> m_fs_posix;
 static std::shared_ptr<FSPlugin> m_fs_gekkofs;
 static std::shared_ptr<FSPlugin> m_fs_dataclay;
+static std::shared_ptr<FSPlugin> m_fs_hercules;
+static std::shared_ptr<FSPlugin> m_fs_expand;
+static std::shared_ptr<FSPlugin> m_fs_none;
+
+
 
 std::shared_ptr<FSPlugin>
 FSPlugin::make_fs(type t) {
 
     switch(t) {
+        case type::none:
+            if(m_fs_none == nullptr)
+                m_fs_none = std::make_shared<cargo::none_plugin>();
+        return m_fs_none;
         case type::posix:
         case type::parallel:
             if(m_fs_posix == nullptr)
@@ -43,11 +53,15 @@ FSPlugin::make_fs(type t) {
 #endif
 #ifdef HERCULES_PLUGIN
         case type::hercules:
-            return std::make_unique<cargo::hercules_plugin>();
+         if(m_fs_hercules == nullptr)
+                m_fs_hercules = std::make_shared<cargo::hercules_plugin>();
+            return m_fs_hercules;
 #endif
 #ifdef EXPAND_PLUGIN
         case type::expand:
-            return std::make_unique<cargo::expand_plugin>();
+            if(m_fs_expand == nullptr)
+                m_fs_expand = std::make_shared<cargo::expand_plugin>();
+            return m_fs_expand;
 #endif
         default:
             return {};

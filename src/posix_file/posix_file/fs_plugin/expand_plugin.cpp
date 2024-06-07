@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include "xpn.h"
+#include <xpn_client/xpn.h>
 
 #ifdef __cplusplus
 }
@@ -32,7 +32,7 @@ expand_plugin::~expand_plugin() {
 // Override the open function
 int
 expand_plugin::open(const std::string& path, int flags, unsigned int mode) {
-    return xpn_open(path, flags, mode);
+    return xpn_open(path.c_str(), flags, mode);
 }
 
 // Override the pread function
@@ -52,7 +52,7 @@ expand_plugin::pwrite(int fd, const void* buf, size_t count, off_t offset) {
 
 bool
 expand_plugin::mkdir(const std::string& path, mode_t mode) {
-    int result = xpn_mkdir(path, mode);
+    int result = xpn_mkdir(path.c_str(), mode);
     return result;
 }
 
@@ -73,5 +73,37 @@ expand_plugin::fallocate(int fd, int mode, off_t offset, off_t len) {
     (void) offset;
     (void) len;
     return len;
+}
+
+int
+expand_plugin::unlink(const std::string& path) {
+
+    (void) path;
+    std::cerr << "expand_plugin unlink not supported" << std::endl;
+    return 0;
+}
+
+
+std::vector<std::string>
+expand_plugin::readdir(const std::string& path) {
+    (void) path;
+    std::cerr << "expand_plugin readdir not supported" << std::endl;
+    return {};
+}
+
+// stat
+int
+expand_plugin::stat(const std::string& path, struct stat* buf) {
+    (void) path;
+    (void) buf;
+    std::cerr << "expand_plugin stat not supported" << std::endl;
+    return 0;
+}
+
+ssize_t
+expand_plugin::size(const std::string& path) {
+    (void) path;
+    std::cerr << "expand_plugin size not supported" << std::endl;
+    return 0;
 }
 } // namespace cargo

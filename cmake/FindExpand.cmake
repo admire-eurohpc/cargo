@@ -29,11 +29,15 @@
 
 find_path(Expand_INCLUDE_DIR
   NAMES xpn.h
-  PREFIX xpn
+  PREFIX xpn_client
 )
 
 find_library(Expand_LIBRARY
   NAMES libxpn.so
+)
+
+find_library(Expand_LIBRARY_BY
+	NAMES xpn_bypass.so
 )
 
 include(FindPackageHandleStandardArgs)
@@ -42,10 +46,11 @@ find_package_handle_standard_args(
 	DEFAULT_MSG
 	Expand_INCLUDE_DIR
 	Expand_LIBRARY
+	Expand_LIBRARY_BY
 )
 
 if(Expand_FOUND)
-  set(Expand_LIBRARIES ${Expand_LIBRARY})
+  set(Expand_LIBRARIES ${Expand_LIBRARY} ${Expand_LIBRARY_BY})
   set(Expand_INCLUDE_DIRS ${Expand_INCLUDE_DIR})
 
 
@@ -53,6 +58,7 @@ if(Expand_FOUND)
 	  add_library(Expand::Expand UNKNOWN IMPORTED)
 	  set_target_properties(Expand::Expand PROPERTIES
 		IMPORTED_LOCATION "${Expand_LIBRARY}"
+		IMPORTED_LOCATION "${Expand_LIBRARY_BY}"
 		INTERFACE_INCLUDE_DIRECTORIES "${Expand_INCLUDE_DIR}"
 	  )
 	endif()
@@ -62,4 +68,5 @@ endif()
 mark_as_advanced(
 	Expand_INCLUDE_DIR
 	Expand_LIBRARY
+	Expand_LIBRARY_BY
 )

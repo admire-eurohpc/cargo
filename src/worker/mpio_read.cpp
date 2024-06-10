@@ -152,7 +152,7 @@ mpio_read::operator()() {
         m_status = make_system_error(e.code().value());
         return make_system_error(e.code().value());
     } catch(const std::exception& e) {
-        LOGGER_ERROR("Unexpected exception: {}", e.what());
+        LOGGER_ERROR("operator ()() Unexpected exception: {}", e.what());
         m_status = error_code::other;
         return error_code::other;
     }
@@ -231,7 +231,7 @@ mpio_read::progress(int ongoing_index) {
         m_status = make_system_error(e.code().value());
         return -1;
     } catch(const std::exception& e) {
-        LOGGER_ERROR("Unexpected exception: {}", e.what());
+        LOGGER_ERROR("Progress: Unexpected exception: {}", e.what());
         m_status = error_code::other;
         return -1;
     }

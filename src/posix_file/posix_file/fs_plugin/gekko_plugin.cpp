@@ -28,13 +28,13 @@ gekko_plugin::open(const std::string& path, int flags, unsigned int mode) {
 // Override the pread function
 ssize_t
 gekko_plugin::pread(int fd, void* buf, size_t count, off_t offset) {
-    return gkfs::syscall::gkfs_pread(fd, buf, count, offset);
+    return gkfs::syscall::gkfs_pread_ws(fd, buf, count, offset);
 }
 
 // Override the pwrite function
 ssize_t
 gekko_plugin::pwrite(int fd, const void* buf, size_t count, off_t offset) {
-    return gkfs::syscall::gkfs_pwrite(fd, buf, count, offset);
+    return gkfs::syscall::gkfs_pwrite_ws(fd, buf, count, offset);
 }
 
 

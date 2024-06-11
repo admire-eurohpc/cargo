@@ -70,7 +70,7 @@ make_message(std::uint64_t tid, std::uint32_t seqno,
             cargo::transfer_message{tid, seqno, input.path(),
                                     static_cast<uint32_t>(input.get_type()),
                                     output.path(),
-                                    static_cast<uint32_t>(input.get_type())});
+                                    static_cast<uint32_t>(output.get_type())});
 }
 
 } // namespace

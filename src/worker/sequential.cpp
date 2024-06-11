@@ -172,8 +172,10 @@ seq_operation::progress(int ongoing_index) {
             m_status = error_code::other;
             return -1;
         }
+         write = true;
+        ongoing_index = 0;
     }
-    write = true;
+   
     // We finished reading
     // step3. POSIX write data
     // We need to create the directory if it does not exists (using
